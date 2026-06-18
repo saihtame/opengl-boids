@@ -1,24 +1,19 @@
 #pragma once
+#include <glm/ext/vector_float2.hpp>
+#include <glm/ext/vector_float3.hpp>
 
 
 namespace ParticleSim::Render::Mesh {
 
 class Mesh {
 public:
-    Mesh();
-    ~Mesh();
+    void generate_normals();
 
-    void set_data(void* data, unsigned int data_size, unsigned int* indices, int indices_size);
-    void render();
-
-private:
-    unsigned int VAO = 0;
-    unsigned int VBO = 0;
-    unsigned int EBO = 0;
-    unsigned int indices_size = 0;
-
-private:
-    inline void delete_buffers();
+public: // Public properties
+    std::vector<glm::vec3> vertices;
+    std::vector<glm::vec2> uvs;
+    std::vector<glm::vec3> normals;
+    std::vector<unsigned int> indices;
 };
 
 }
