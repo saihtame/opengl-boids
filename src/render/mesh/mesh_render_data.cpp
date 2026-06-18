@@ -5,10 +5,7 @@
 namespace ParticleSim::Render::Mesh {
 
 MeshRenderData::MeshRenderData(const std::shared_ptr<Mesh>& mesh) {
-    // mesh->vertices == std::vector<glm::vec3>
-    // mesh->normals == std::vector<glm::vec3>
-    // mesh->uvs == std::vector<glm::vec2>
-    // mesh->indices == std::vector<glm::vec2>
+    assert(mesh != nullptr);
     assert(mesh->vertices.size() == mesh->uvs.size());
     assert(mesh->vertices.size() == mesh->normals.size());
 

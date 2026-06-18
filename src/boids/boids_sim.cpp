@@ -4,13 +4,12 @@
 
 namespace ParticleSim::Boids {
 
-BoidsSim::BoidsSim() {
+BoidsSim::BoidsSim(const std::shared_ptr<Render::Mesh::Mesh>& value, int boids)
+    : boids(boids) {
     update_model_trans();
     material = std::make_unique<BoidsMaterial>();
-}
-
-void BoidsSim::set_mesh(std::shared_ptr<Render::Mesh::Mesh>& value) {
-    render_data = std::make_unique<BoidsMeshRenderData>(value);
+    if (value != nullptr)
+        render_data = std::make_unique<BoidsMeshRenderData>(value);
 }
 
 void BoidsSim::update(float) {

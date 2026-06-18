@@ -10,13 +10,11 @@ namespace ParticleSim::Render {
 
 class MeshInstance : public Renderable {
 public:
-    MeshInstance();
+    MeshInstance(const std::shared_ptr<Mesh::Mesh>& mesh);
     ~MeshInstance() = default;
 
     virtual void render(const glm::mat4& view, const glm::mat4& projection) const;
     virtual BlendMode get_blend_mode() const;
-
-    void set_mesh(std::shared_ptr<Mesh::Mesh>& value);
 
 public: // Public properties
     std::shared_ptr<Material::Material> material = nullptr;

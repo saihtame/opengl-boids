@@ -4,7 +4,7 @@
 
 namespace ParticleSim::Boids {
 
-BoidsMeshRenderData::BoidsMeshRenderData(const std::shared_ptr<Render::Mesh::Mesh>& mesh) 
+BoidsMeshRenderData::BoidsMeshRenderData(const std::shared_ptr<Render::Mesh::Mesh>& mesh)
     : Render::Mesh::MeshRenderData(mesh) {
 }
 

@@ -30,16 +30,14 @@ std::vector<std::shared_ptr<Render::Renderable>> get_scene() {
     /*---- Floor and roof ----*/
     auto floor_roof_mesh = Render::Mesh::generate_square_2sides(scene_width, scene_length);
     // Floor
-    auto floor = std::make_shared<Render::MeshInstance>();
+    auto floor = std::make_shared<Render::MeshInstance>(floor_roof_mesh);
     floor->material = floor_mat;
-    floor->set_mesh(floor_roof_mesh);
     floor->move_to(glm::vec3(0.0, -scene_height / 2, 0.0));
     floor->rotate(glm::radians(90.0), glm::vec3(1.0, 0.0, 0.0));
     renderables.push_back(floor);
     // Generate roof
-    auto roof = std::make_shared<Render::MeshInstance>();
+    auto roof = std::make_shared<Render::MeshInstance>(floor_roof_mesh);
     roof->material = trans_mat;
-    roof->set_mesh(floor_roof_mesh);
     roof->move_to(glm::vec3(0.0, scene_height / 2, 0.0));
     roof->rotate(glm::radians(90.0), glm::vec3(1.0, 0.0, 0.0));
     renderables.push_back(roof);
@@ -49,25 +47,21 @@ std::vector<std::shared_ptr<Render::Renderable>> get_scene() {
     auto wall_mesh_fb = Render::Mesh::generate_square_2sides(scene_width, scene_height);
     auto wall_mesh_lr = Render::Mesh::generate_square_2sides(scene_length, scene_height);
     // Front wall
-    auto wall_f = std::make_shared<Render::MeshInstance>();
+    auto wall_f = std::make_shared<Render::MeshInstance>(wall_mesh_fb);
     wall_f->material = invisible_mat;
-    wall_f->set_mesh(wall_mesh_fb);
     wall_f->move_to(glm::vec3(0.0, 0.0, scene_length/2));
     // Back wall
-    auto wall_b = std::make_shared<Render::MeshInstance>();
+    auto wall_b = std::make_shared<Render::MeshInstance>(wall_mesh_fb);
     wall_b->material = trans_mat;
-    wall_b->set_mesh(wall_mesh_fb);
     wall_b->move_to(glm::vec3(0.0, 0.0, -scene_length/2));
     // Left wall
-    auto wall_l = std::make_shared<Render::MeshInstance>();
+    auto wall_l = std::make_shared<Render::MeshInstance>(wall_mesh_lr);
     wall_l->material = trans_mat;
-    wall_l->set_mesh(wall_mesh_lr);
     wall_l->move_to(glm::vec3(-scene_width/2, 0.0, 0.0));
     wall_l->rotate(glm::radians(90.0), glm::vec3(0.0, 1.0, 0.0));
     // Right wall
-    auto wall_r = std::make_shared<Render::MeshInstance>();
+    auto wall_r = std::make_shared<Render::MeshInstance>(wall_mesh_lr);
     wall_r->material = trans_mat;
-    wall_r->set_mesh(wall_mesh_lr);
     wall_r->move_to(glm::vec3(scene_width/2, 0.0, 0.0));
     wall_r->rotate(glm::radians(90.0), glm::vec3(0.0, 1.0, 0.0));
     // Add walls to renderer
@@ -77,9 +71,8 @@ std::vector<std::shared_ptr<Render::Renderable>> get_scene() {
     renderables.push_back(wall_r);
 
     /*---- Boids ----*/
-    auto boids_sim = std::make_shared<BoidsSim>();
     auto boid_mesh = Render::Mesh::generate_cone(0.2f, 1.0f, 3);
-    boids_sim->set_mesh(boid_mesh);
+    auto boids_sim = std::make_shared<BoidsSim>(boid_mesh, 10);
     renderables.push_back(boids_sim);
 
     /*---- Scene Offset ----*/

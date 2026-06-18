@@ -12,14 +12,11 @@
 
 namespace ParticleSim::Render {
 
-MeshInstance::MeshInstance() {
+MeshInstance::MeshInstance(const std::shared_ptr<Mesh::Mesh>& mesh) {
     update_model_trans();
-}
 
-void MeshInstance::set_mesh(std::shared_ptr<Mesh::Mesh>& value) {
-    if (value== nullptr) return;
-
-    render_data = std::make_unique<Mesh::MeshRenderData>(value);
+    if (mesh != nullptr)
+        render_data = std::make_unique<Mesh::MeshRenderData>(mesh);
 }
 
 void MeshInstance::render(const glm::mat4& view, const glm::mat4& projection) const {
