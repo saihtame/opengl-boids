@@ -10,7 +10,7 @@ namespace ParticleSim::Boids {
 
 class BoidsSim: public Render::Renderable {
 public:
-    BoidsSim(const std::shared_ptr<Render::Mesh::Mesh>& value, int boids);
+    BoidsSim(const std::shared_ptr<Render::Mesh::Mesh>& value, int boids, glm::vec3 bounds);
     ~BoidsSim() = default;
 
     void update(float delta);
@@ -22,6 +22,7 @@ private:
     std::unique_ptr<BoidsMaterial> material;
     std::unique_ptr<BoidsMeshRenderData> render_data;
     int boids;
+    glm::vec3 bounds;
 };
 
 }
