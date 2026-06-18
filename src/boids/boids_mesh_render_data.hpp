@@ -7,7 +7,7 @@
 namespace ParticleSim::Boids {
 
 struct BoidsMeshRenderData : public Render::Mesh::MeshRenderData {
-    BoidsMeshRenderData(const std::shared_ptr<Render::Mesh::Mesh>& mesh, int boids, glm::vec3 pos_offset);
+    BoidsMeshRenderData(const std::shared_ptr<Render::Mesh::Mesh>& mesh, int boids, glm::vec3 bounds);
     ~BoidsMeshRenderData();
 
 public:

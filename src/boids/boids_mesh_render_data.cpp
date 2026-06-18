@@ -2,23 +2,21 @@
 #include "render/material/shader.hpp"
 #include "render/mesh/mesh_render_data.hpp"
 #include <glm/ext/vector_float3.hpp>
+#include <glm/gtc/random.hpp>
 
 
 namespace ParticleSim::Boids {
 
-BoidsMeshRenderData::BoidsMeshRenderData(const std::shared_ptr<Render::Mesh::Mesh>& mesh, int boids, glm::vec3 pos_offset)
+BoidsMeshRenderData::BoidsMeshRenderData(const std::shared_ptr<Render::Mesh::Mesh>& mesh, int boids, glm::vec3 bounds)
     : Render::Mesh::MeshRenderData(mesh) {
     // Prepare instances data
     std::vector<float> data;
     data.resize(boids * 6, 0.0);
-    glm::vec3 instance_pos = -pos_offset * ((float)boids / 2) + pos_offset * 0.5f;
     for (int i = 0; i < boids; i++) {
         // Position data
-        data[i * 6] = instance_pos.x;
-        data[i * 6 + 1] = instance_pos.y;
-        data[i * 6 + 2] = instance_pos.z;
-        // Velocity data remains 0
-        instance_pos += pos_offset;
+        data[i * 6]     = glm::linearRand(1.0f, bounds.x - 1.0f);
+        data[i * 6 + 1] = glm::linearRand(1.0f, bounds.y - 1.0f);
+        data[i * 6 + 2] = glm::linearRand(1.0f, bounds.z - 1.0f);
     }
     // Bind VAO
     glBindVertexArray(VAO);
