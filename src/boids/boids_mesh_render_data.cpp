@@ -2,6 +2,7 @@
 #include "render/material/shader.hpp"
 #include "render/mesh/mesh_render_data.hpp"
 #include <glm/ext/vector_float3.hpp>
+#include <glm/geometric.hpp>
 #include <glm/gtc/random.hpp>
 
 
@@ -17,6 +18,11 @@ BoidsMeshRenderData::BoidsMeshRenderData(const std::shared_ptr<Render::Mesh::Mes
         data[i * 6]     = glm::linearRand(1.0f, bounds.x - 1.0f);
         data[i * 6 + 1] = glm::linearRand(1.0f, bounds.y - 1.0f);
         data[i * 6 + 2] = glm::linearRand(1.0f, bounds.z - 1.0f);
+        // Velocity data
+        glm::vec3 vel = glm::sphericalRand(1.0f);
+        data[i * 6 + 3] = vel.x;
+        data[i * 6 + 4] = vel.y;
+        data[i * 6 + 5] = vel.z;
     }
     // Bind VAO
     glBindVertexArray(VAO);
