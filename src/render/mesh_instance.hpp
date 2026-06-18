@@ -7,10 +7,10 @@
 
 namespace ParticleSim::Render {
 
-class MeshRenderer : public Renderable {
+class MeshInstance : public Renderable {
 public:
-    MeshRenderer();
-    ~MeshRenderer() = default;
+    MeshInstance();
+    ~MeshInstance() = default;
 
     virtual void render(const glm::mat4& view, const glm::mat4& projection) const;
     virtual BlendMode get_blend_mode() const;

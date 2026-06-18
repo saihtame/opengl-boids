@@ -1,4 +1,5 @@
 #include "app/app.hpp"
+#include "render/renderable.hpp"
 #include "render/renderer.hpp"
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_events.h>
@@ -67,7 +68,8 @@ App::App() {
     renderer = std::make_unique<Render::Renderer>();
 
     // Create camera
-    cam = std::make_unique<Core::Camera>();
+    cam = std::make_shared<Core::Camera>();
+    add_object(cam);
 
     // Create skybox
     auto skybox = std::make_shared<Render::CubeMap>();
@@ -115,8 +117,9 @@ bool App::run() {
         delta = (double)(tick - last_tick) / frequency;
         last_tick = tick;
 
-        // Update camera
-        cam->update(delta);
+        // Update objects
+        for (auto& obj : objects)
+            obj->update(delta);
 
         // Clear the screen
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -129,6 +132,15 @@ bool App::run() {
 
     SDL_SetWindowRelativeMouseMode(win, false);
     return true;
+}
+
+void App::add_object(std::shared_ptr<Core::Object3D> obj) {
+    objects.push_back(obj);
+}
+
+void App::add_renderable(std::shared_ptr<Render::Renderable> obj) {
+    add_object(obj);
+    renderer->add_renderable(obj);
 }
 
 inline void App::handle_inputs() {

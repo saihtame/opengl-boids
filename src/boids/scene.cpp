@@ -1,0 +1,85 @@
+#include "scene.hpp"
+#include "render/blend_mode.hpp"
+#include "render/material/color_material.hpp"
+#include "render/mesh/primitives.hpp"
+#include "render/mesh_instance.hpp"
+#include "render/renderable.hpp"
+#include <glm/ext/vector_float3.hpp>
+#include <glm/ext/vector_float4.hpp>
+#include <glm/trigonometric.hpp>
+#include <memory>
+#include <vector>
+
+
+namespace ParticleSim::Boids {
+
+std::vector<std::shared_ptr<Render::Renderable>> get_scene() {
+    auto renderables = std::vector<std::shared_ptr<Render::Renderable>>();
+
+    /*---- Materials ----*/
+    auto floor_mat = std::make_shared<Render::Material::ColorMaterial>();
+    auto trans_mat = std::make_shared<Render::Material::ColorMaterial>();
+    trans_mat->color = glm::vec4(0.5, 0.5, 0.5, 0.2);
+    trans_mat->blend_mode = Render::BLEND_MODE_TRANSLUCENT;
+    floor_mat->color = glm::vec4(0.0, 1.0, 0.0, 1.0);
+    auto invisible_mat = std::make_shared<Render::Material::ColorMaterial>();
+    invisible_mat->color = glm::vec4(1.0, 1.0, 1.0, 0.0);
+    invisible_mat->blend_mode = Render::BLEND_MODE_TRANSLUCENT;
+
+    /*---- Floor and roof ----*/
+    auto floor_roof_mesh = Render::Mesh::generate_square_2sides(scene_width, scene_length);
+    // Floor
+    auto floor = std::make_shared<Render::MeshInstance>();
+    floor->material = floor_mat;
+    floor->mesh = floor_roof_mesh;
+    floor->move_to(glm::vec3(0.0, -scene_height / 2, 0.0));
+    floor->rotate(glm::radians(90.0), glm::vec3(1.0, 0.0, 0.0));
+    renderables.push_back(floor);
+    // Generate roof
+    auto roof = std::make_shared<Render::MeshInstance>();
+    roof->material = trans_mat;
+    roof->mesh = floor_roof_mesh;
+    roof->move_to(glm::vec3(0.0, scene_height / 2, 0.0));
+    roof->rotate(glm::radians(90.0), glm::vec3(1.0, 0.0, 0.0));
+    renderables.push_back(roof);
+
+    /*---- Walls ----*/
+    // Wall meshes
+    auto wall_mesh_fb = Render::Mesh::generate_square_2sides(scene_width, scene_height);
+    auto wall_mesh_lr = Render::Mesh::generate_square_2sides(scene_length, scene_height);
+    // Front wall
+    auto wall_f = std::make_shared<Render::MeshInstance>();
+    wall_f->material = invisible_mat;
+    wall_f->mesh = wall_mesh_fb;
+    wall_f->move_to(glm::vec3(0.0, 0.0, scene_length/2));
+    // Back wall
+    auto wall_b = std::make_shared<Render::MeshInstance>();
+    wall_b->material = trans_mat;
+    wall_b->mesh = wall_mesh_fb;
+    wall_b->move_to(glm::vec3(0.0, 0.0, -scene_length/2));
+    // Left wall
+    auto wall_l = std::make_shared<Render::MeshInstance>();
+    wall_l->material = trans_mat;
+    wall_l->mesh = wall_mesh_lr;
+    wall_l->move_to(glm::vec3(-scene_width/2, 0.0, 0.0));
+    wall_l->rotate(glm::radians(90.0), glm::vec3(0.0, 1.0, 0.0));
+    // Right wall
+    auto wall_r = std::make_shared<Render::MeshInstance>();
+    wall_r->material = trans_mat;
+    wall_r->mesh = wall_mesh_lr;
+    wall_r->move_to(glm::vec3(scene_width/2, 0.0, 0.0));
+    wall_r->rotate(glm::radians(90.0), glm::vec3(0.0, 1.0, 0.0));
+    // Add walls to renderer
+    renderables.push_back(wall_f);
+    renderables.push_back(wall_b);
+    renderables.push_back(wall_l);
+    renderables.push_back(wall_r);
+
+    /*---- Scene Offset ----*/
+    for (auto& r : renderables)
+        r->move(scene_offset);
+
+    return renderables;
+}
+
+}

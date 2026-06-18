@@ -77,14 +77,14 @@ std::shared_ptr<Mesh> generate_square(float width, float height) {
 
     float vertices[] = {
         // Vertices      // UVs       // Normals
-        -wh, hh, 0.0f,   0.0f, 1.0f,  0.0f, 0.0f, -1.0f,
-        wh, hh, 0.0f,    1.0f, 1.0f,  0.0f, 0.0f, -1.0f,
-        wh, -hh, 0.0f,   1.0f, 0.0f,  0.0f, 0.0f, -1.0f,
-        -wh, -hh, 0.0f,  0.0f, 0.0f,  0.0f, 0.0f, -1.0f,
+        -wh, hh, 0.0f,   0.0f, 1.0f,  0.0f, 0.0f, 1.0f,
+        wh, hh, 0.0f,    1.0f, 1.0f,  0.0f, 0.0f, 1.0f,
+        wh, -hh, 0.0f,   1.0f, 0.0f,  0.0f, 0.0f, 1.0f,
+        -wh, -hh, 0.0f,  0.0f, 0.0f,  0.0f, 0.0f, 1.0f
     };
     unsigned int indices[] = {
-        0, 2, 3,
-        0, 1, 2
+        2, 1, 0,
+        3, 2, 0 
     };
 
     mesh->set_data(vertices, sizeof(vertices) / sizeof(float), indices, sizeof(indices) / sizeof(unsigned int));

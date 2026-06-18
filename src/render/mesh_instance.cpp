@@ -8,11 +8,11 @@
 
 namespace ParticleSim::Render {
 
-MeshRenderer::MeshRenderer() {
+MeshInstance::MeshInstance() {
     update_model_trans();
 }
 
-void MeshRenderer::render(const glm::mat4& view, const glm::mat4& projection) const {
+void MeshInstance::render(const glm::mat4& view, const glm::mat4& projection) const {
     if (mesh == nullptr) {
         return;
     }
@@ -25,7 +25,7 @@ void MeshRenderer::render(const glm::mat4& view, const glm::mat4& projection) co
     mesh->render();
 }
 
-BlendMode MeshRenderer::get_blend_mode() const {
+BlendMode MeshInstance::get_blend_mode() const {
     if (material == nullptr)
         return BLEND_MODE_NONE;
 

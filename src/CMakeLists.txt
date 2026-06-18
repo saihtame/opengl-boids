@@ -2,6 +2,7 @@ add_executable(particle_sim main.cpp)
 
 add_subdirectory(core)
 add_subdirectory(render)
+add_subdirectory(boids)
 add_subdirectory(app)
 
 target_include_directories(particle_sim PRIVATE

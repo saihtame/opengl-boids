@@ -1,5 +1,7 @@
 #pragma once
 #include "core/camera.hpp"
+#include "core/object_3d.hpp"
+#include "render/renderable.hpp"
 #include "render/renderer.hpp"
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_video.h>
@@ -12,8 +14,10 @@ public:
     App();
     ~App();
 
-    bool initialize();
     bool run();
+
+    void add_object(std::shared_ptr<Core::Object3D> obj);
+    void add_renderable(std::shared_ptr<Render::Renderable> obj);
 
 private: // Constants
     const int window_flags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE;
@@ -28,7 +32,9 @@ private: // Runtime properties
     bool quit = false;
     SDL_Event event;
     // Camera
-    std::unique_ptr<Core::Camera> cam;
+    std::shared_ptr<Core::Camera> cam;
+    // Objects
+    std::vector<std::shared_ptr<Core::Object3D>> objects;
     std::unique_ptr<Render::Renderer> renderer;
 
 private:

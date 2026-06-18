@@ -1,0 +1,14 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "particle_sim",
+      "type": "codelldb",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/bin/particle_sim",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "stopAtEntry": false
+    }
+  ]
+}
