@@ -18,7 +18,7 @@ void BoidsSim::update(float delta) {
     if (compute == nullptr || data == nullptr)
         return;
 
-    compute->compute(boid_speed * delta, *data);
+    compute->compute(delta, *data);
 }
 
 void BoidsSim::render(const glm::mat4& view, const glm::mat4& projection) const {

@@ -3,6 +3,10 @@ layout (local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
 layout (location = 0) uniform float boidSpeed;
 layout (location = 1) uniform vec3 bounds;
 layout (location = 2) uniform int boidCount;
+layout (location = 3) uniform float viewRange;
+layout (location = 4) uniform float viewCosine;
+layout (location = 5) uniform float delta;
+layout (location = 6) uniform float steeringForce;
 
 struct Instance {
     vec3 pos;
@@ -20,30 +24,93 @@ layout(std430, binding = 1) buffer InstanceDataOut
 };
 
 
+bool canNormalize(vec3 v)
+{
+    return dot(v, v) > 1e-8;
+}
+
+vec3 applySteering(vec3 currentVel, vec3 newVel) {
+    // Get steering
+    vec3 steering = (newVel - currentVel);
+    // Clamp steering to steeringForce * delta
+    float len = length(steering);
+    float maxLen = delta * steeringForce;
+    if (len > maxLen)
+        steering *= maxLen / len;
+    vec3 velSteering = currentVel + steering;
+
+    // Check if velSteering isn't zero
+    if (canNormalize(velSteering))
+        return normalize(velSteering);
+    return currentVel;
+}
+
 void main() {
     uint id = gl_GlobalInvocationID.x;
+
+    // Skip if id is above boid count
     if (id >= boidCount) return;
-    Instance i = instancesIn[id];
+
+    // Get input instance
+    Instance instance = instancesIn[id];
+
+    // React to other boids
+    vec3 seperation = vec3(0.0f);
+    int neighbours = 0;
+    for (uint i = 0; i < boidCount; i++) {
+        // Skip check self
+        if (i == id) continue;
+
+        // Get other instance
+        Instance other = instancesIn[i];
+
+        // Skip boids out of view range
+        vec3 dirToOther = other.pos - instance.pos;
+        if (!canNormalize(dirToOther)) continue;
+        float distanceToOther = length(dirToOther);
+        if (distanceToOther > viewRange) continue;
+
+        // Skip boids out of viewing angle
+        vec3 dirToOtherNormal = normalize(dirToOther);
+        float angleToBoid = dot(dirToOtherNormal, instance.vel);
+        if (angleToBoid < viewCosine) continue;
+
+        neighbours++;
+
+        // Avoid collision
+        seperation += -dirToOtherNormal * (1 / distanceToOther);
+    }
+    // Only update velocity if any neighbours was found
+    if (neighbours != 0) {
+        seperation = seperation / neighbours;
+
+        vec3 newVel = seperation;
+        newVel = canNormalize(newVel) ? normalize(newVel) : instance.vel;
+
+        instance.vel = applySteering(instance.vel, newVel);
+    }
+
 
     // Update position based on velocity
-    i.pos += normalize(i.vel) * boidSpeed;
+    instance.pos += instance.vel * boidSpeed * delta;
 
     // Check for out of bounds
     // X
-    if (i.pos.x < 0)
-        i.pos.x += bounds.x;
-    else if (i.pos.x > bounds.x)
-        i.pos.x -= bounds.x;
+    if (instance.pos.x < 0)
+        instance.pos.x += bounds.x;
+    else if (instance.pos.x > bounds.x)
+        instance.pos.x -= bounds.x;
     // Y
-    if (i.pos.y < 0)
-        i.pos.y += bounds.y;
-    else if(i.pos.y > bounds.y)
-        i.pos.y -= bounds.y;
+    if (instance.pos.y < 0)
+        instance.pos.y += bounds.y;
+    else if(instance.pos.y > bounds.y)
+        instance.pos.y -= bounds.y;
     // Z
-    if (i.pos.z < 0)
-        i.pos.z += bounds.z;
-    if (i.pos.z > bounds.z)
-        i.pos.z -= bounds.z;
+    if (instance.pos.z < 0)
+        instance.pos.z += bounds.z;
+    if (instance.pos.z > bounds.z)
+        instance.pos.z -= bounds.z;
 
-    instancesOut[id] = i;
+    // Write to output buffer
+    instancesOut[id] = instance;
 }

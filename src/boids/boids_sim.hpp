@@ -25,10 +25,7 @@ private:
     std::unique_ptr<BoidsData> data;
     std::unique_ptr<BoidsCompute> compute;
     int boids = 10000;
-    float boid_speed = 10.0f;
     glm::vec3 bounds = glm::vec3(128.0f, 64.0f, 128.0f);
-    glm::ivec3 grid_size = glm::ivec3(64, 32, 64);
-    glm::vec3 grid_box_size = glm::vec3(2.0f, 2.0f, 2.0f);
 };
 
 }

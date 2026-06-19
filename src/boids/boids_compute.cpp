@@ -8,7 +8,7 @@
 namespace ParticleSim::Boids {
 
 BoidsCompute::BoidsCompute(int boids, glm::vec3 bounds) : bounds(bounds), boids(boids) {
-    dispatches = boids / 32;
+    dispatches = (boids + 31) / 32;
 
     // Load shader file
     auto shader_str = read_file(shader_path);
@@ -32,13 +32,13 @@ BoidsCompute::~BoidsCompute() {
     glDeleteProgram(program_id);
 }
 
-void BoidsCompute::compute(float boidSpeed, BoidsData& data) {
+void BoidsCompute::compute(float delta, BoidsData& data) {
     // Bind shader program
     glUseProgram(program_id);
 
     // Set boid speed uniform
     auto loc = get_uniform_location("boidSpeed");
-    glUniform1f(loc, boidSpeed);
+    glUniform1f(loc, 10.0f);
 
     // Set bounds uniform
     loc = get_uniform_location("bounds");
@@ -47,6 +47,22 @@ void BoidsCompute::compute(float boidSpeed, BoidsData& data) {
     // Set boids uniform
     loc = get_uniform_location("boidCount");
     glUniform1i(loc, boids);
+
+    // Set view range uniform
+    loc = get_uniform_location("viewRange");
+    glUniform1f(loc, 30.0f);
+
+    // Set view angle uniform
+    loc = get_uniform_location("viewCosine");
+    glUniform1f(loc, 0.0f);
+
+    // Set delta uniform
+    loc = get_uniform_location("delta");
+    glUniform1f(loc, delta);
+
+    // Set steering force uniform
+    loc = get_uniform_location("steeringForce");
+    glUniform1f(loc, 1.0f);
 
     // Set instances data input uniform
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, data.instances_BO_A);
