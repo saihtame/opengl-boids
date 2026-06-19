@@ -14,15 +14,16 @@ out vec3 v_color;
 void main() {
     vec3 forward = normalize(aInstanceVel);
 
-    // Pick a fallback up vector if forward is almost parallel to world up
+    // Get directional vectors
     vec3 worldUp = abs(forward.y) > 0.999 ? vec3(1.0, 0.0, 0.0)
                                           : vec3(0.0, 1.0, 0.0);
-
     vec3 right = normalize(cross(worldUp, forward));
     vec3 up    = cross(forward, right);
 
+    // Construct a rotation matrix
     mat3 rot = mat3(right, up, forward);
 
+    // Apply rotation to position
     vec3 rotatedPos = rot * aPos;
     vec3 worldPos = rotatedPos + aInstancePos;
 
