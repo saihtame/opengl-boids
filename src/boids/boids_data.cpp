@@ -29,25 +29,50 @@ BoidsData::BoidsData(const std::shared_ptr<Render::Mesh::Mesh>& mesh, int boids,
         data[i * 8 + 6] = vel.z;
         data[i * 8 + 7] = 0.0f; // Padding
     }
-    // Bind VAO
-    glBindVertexArray(VAO);
-    // Create instances buffer
-    glGenBuffers(1, &instances_BO);
-    glBindBuffer(GL_ARRAY_BUFFER, instances_BO);
-    // Copy data over to buffer
-    glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(float), data.data(), GL_DYNAMIC_COPY);
 
-    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(3);
-    glVertexAttribDivisor(3, 1);  
-    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(4 * sizeof(float)));
-    glEnableVertexAttribArray(4);
-    glVertexAttribDivisor(4, 1);  
+    // Create instances buffers
+    glGenBuffers(1, &instances_BO_A);
+    glGenBuffers(1, &instances_BO_B);
+    // Copy data over to buffer A
+    glBindBuffer(GL_ARRAY_BUFFER, instances_BO_A);
+    glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(float), data.data(), GL_DYNAMIC_COPY);
+    // Reser space in buffer B
+    glBindBuffer(GL_ARRAY_BUFFER, instances_BO_B);
+    glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(float), NULL, GL_DYNAMIC_COPY);
+
+    // Set vao attributes
+    set_attributes();
 }
 
 BoidsData::~BoidsData() {
-    glDeleteBuffers(1, &instances_BO);
-    instances_BO = 0;
+    glDeleteBuffers(1, &instances_BO_A);
+    glDeleteBuffers(1, &instances_BO_B);
+    instances_BO_A = 0;
+    instances_BO_B = 0;
+}
+
+void BoidsData::switch_instance_buffers() {
+    // Switch buffers
+    unsigned int tmp = instances_BO_A;
+    instances_BO_A = instances_BO_B;
+    instances_BO_B = tmp;
+
+    // Reset VAO attributes
+    set_attributes();
+}
+
+void BoidsData::set_attributes() {
+    // Bind VAO
+    glBindVertexArray(VAO);
+    // Bind instance buffer
+    glBindBuffer(GL_ARRAY_BUFFER, instances_BO_A);
+    // Set attributes
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(3);
+    glVertexAttribDivisor(3, 1);
+    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(4 * sizeof(float)));
+    glEnableVertexAttribArray(4);
+    glVertexAttribDivisor(4, 1);
 }
 
 }

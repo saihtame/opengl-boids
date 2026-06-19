@@ -7,14 +7,16 @@ namespace ParticleSim::Boids {
 
 class BoidsCompute {
 public:
-    BoidsCompute(int boids);
+    BoidsCompute(int boids, glm::vec3 bounds);
     ~BoidsCompute();
 
-    void compute(float boidSpeed, const BoidsData& data);
+    void compute(float boidSpeed, BoidsData& data);
 
 private:
+    glm::vec3 bounds;
     unsigned int program_id = 0;
     int dispatches = 0;
+    int boids = 0;
     std::unordered_map<std::string, unsigned int> uniform_locations;
 
 private:

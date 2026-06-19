@@ -1,12 +1,13 @@
 #include "boids_compute.hpp"
 #include "render/material/shader.hpp"
+#include <glm/ext/vector_float3.hpp>
 #include <iostream>
 #include <fstream>
 
 
 namespace ParticleSim::Boids {
 
-BoidsCompute::BoidsCompute(int boids) {
+BoidsCompute::BoidsCompute(int boids, glm::vec3 bounds) : bounds(bounds), boids(boids) {
     dispatches = boids / 32;
 
     // Load shader file
@@ -31,7 +32,7 @@ BoidsCompute::~BoidsCompute() {
     glDeleteProgram(program_id);
 }
 
-void BoidsCompute::compute(float boidSpeed, const BoidsData& data) {
+void BoidsCompute::compute(float boidSpeed, BoidsData& data) {
     // Bind shader program
     glUseProgram(program_id);
 
@@ -39,12 +40,26 @@ void BoidsCompute::compute(float boidSpeed, const BoidsData& data) {
     auto loc = get_uniform_location("boidSpeed");
     glUniform1f(loc, boidSpeed);
 
-    // Set instances data uniform
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, data.instances_BO);
+    // Set bounds uniform
+    loc = get_uniform_location("bounds");
+    glUniform3f(loc, bounds.x, bounds.y, bounds.z);
+
+    // Set boids uniform
+    loc = get_uniform_location("boidCount");
+    glUniform1i(loc, boids);
+
+    // Set instances data input uniform
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, data.instances_BO_A);
+
+    // Set instances data output uniform
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, data.instances_BO_B);
 
     // Dispatch shader program
     glDispatchCompute(dispatches, 1, 1);
     glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
+
+    // Switch instance data buffers
+    data.switch_instance_buffers();
 }
 
 std::string BoidsCompute::read_file(const std::string& path) {

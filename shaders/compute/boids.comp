@@ -1,23 +1,49 @@
 #version 430 core
 layout (local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
 layout (location = 0) uniform float boidSpeed;
+layout (location = 1) uniform vec3 bounds;
+layout (location = 2) uniform int boidCount;
 
 struct Instance {
     vec3 pos;
     vec3 vel;
 };
 
-layout(std430, binding = 0) buffer InstanceData
+layout(std430, binding = 0) buffer InstanceDataIn
 {
-    Instance instances[];
+    Instance instancesIn[];
+};
+
+layout(std430, binding = 1) buffer InstanceDataOut
+{
+    Instance instancesOut[];
 };
 
 
 void main() {
     uint id = gl_GlobalInvocationID.x;
-    Instance i = instances[id];
+    if (id >= boidCount) return;
+    Instance i = instancesIn[id];
 
+    // Update position based on velocity
     i.pos += normalize(i.vel) * boidSpeed;
 
-    instances[id] = i;
+    // Check for out of bounds
+    // X
+    if (i.pos.x < 0)
+        i.pos.x += bounds.x;
+    else if (i.pos.x > bounds.x)
+        i.pos.x -= bounds.x;
+    // Y
+    if (i.pos.y < 0)
+        i.pos.y += bounds.y;
+    else if(i.pos.y > bounds.y)
+        i.pos.y -= bounds.y;
+    // Z
+    if (i.pos.z < 0)
+        i.pos.z += bounds.z;
+    if (i.pos.z > bounds.z)
+        i.pos.z -= bounds.z;
+
+    instancesOut[id] = i;
 }

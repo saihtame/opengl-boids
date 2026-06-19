@@ -24,7 +24,7 @@ private:
     std::unique_ptr<BoidsMaterial> material;
     std::unique_ptr<BoidsData> data;
     std::unique_ptr<BoidsCompute> compute;
-    int boids = 1024;
+    int boids = 5000;
     float boid_speed = 10.0f;
     glm::vec3 bounds = glm::vec3(128.0f, 64.0f, 128.0f);
     glm::ivec3 grid_size = glm::ivec3(64, 32, 64);

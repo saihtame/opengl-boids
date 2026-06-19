@@ -24,8 +24,8 @@ private: // Constants
 
 private: // Runtime properties
     // Window & context
-    int window_width = 640;
-    int window_height = 480;
+    int window_width = 640*2;
+    int window_height = 480*2;
     SDL_Window* win = nullptr;
     SDL_GLContext gl_context = nullptr;
     // Input handling

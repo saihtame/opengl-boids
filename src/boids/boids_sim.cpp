@@ -11,7 +11,7 @@ BoidsSim::BoidsSim(const std::shared_ptr<Render::Mesh::Mesh>& value) {
     material = std::make_unique<BoidsMaterial>();
     if (value != nullptr)
         data = std::make_unique<BoidsData>(value, boids, bounds);
-    compute = std::make_unique<BoidsCompute>(boids);
+    compute = std::make_unique<BoidsCompute>(boids, bounds);
 }
 
 void BoidsSim::update(float delta) {
