@@ -1,12 +1,12 @@
 #version 430 core
 layout (local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
-layout (location = 0) uniform float boidSpeed;
+layout (location = 0) uniform int boidCount;
 layout (location = 1) uniform vec3 bounds;
-layout (location = 2) uniform int boidCount;
-layout (location = 3) uniform float viewRange;
-layout (location = 4) uniform float viewCosine;
-layout (location = 5) uniform float delta;
-layout (location = 6) uniform float steeringForce;
+layout (location = 2) uniform float boidSpeed;
+layout (location = 3) uniform float acceleration;
+layout (location = 4) uniform float viewRange;
+layout (location = 5) uniform float viewCosine;
+layout (location = 6) uniform float delta;
 
 struct Instance {
     vec3 pos;
@@ -34,7 +34,7 @@ vec3 applySteering(vec3 currentVel, vec3 newVel) {
     vec3 steering = (newVel - currentVel);
     // Clamp steering to steeringForce * delta
     float len = length(steering);
-    float maxLen = delta * steeringForce;
+    float maxLen = delta * acceleration;
     if (len > maxLen)
         steering *= maxLen / len;
     vec3 velSteering = currentVel + steering;
@@ -75,6 +75,7 @@ void main() {
         float angleToBoid = dot(dirToOtherNormal, instance.vel);
         if (angleToBoid < viewCosine) continue;
 
+        // Increment neighbour count
         neighbours++;
 
         // Avoid collision
@@ -84,12 +85,13 @@ void main() {
     if (neighbours != 0) {
         seperation = seperation / neighbours;
 
+        // Calculate new desired velocity
         vec3 newVel = seperation;
         newVel = canNormalize(newVel) ? normalize(newVel) : instance.vel;
 
+        // Apply velocity over time to current velocity
         instance.vel = applySteering(instance.vel, newVel);
     }
-
 
     // Update position based on velocity
     instance.pos += instance.vel * boidSpeed * delta;

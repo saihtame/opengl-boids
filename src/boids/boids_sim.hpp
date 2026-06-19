@@ -2,6 +2,7 @@
 #include "boids/boids_compute.hpp"
 #include "boids/boids_material.hpp"
 #include "boids/boids_data.hpp"
+#include "boids/boids_params.hpp"
 #include "render/mesh/mesh.hpp"
 #include "render/renderable.hpp"
 #include <glm/ext/vector_float3.hpp>
@@ -12,7 +13,7 @@ namespace ParticleSim::Boids {
 
 class BoidsSim: public Render::Renderable {
 public:
-    BoidsSim(const std::shared_ptr<Render::Mesh::Mesh>& value);
+    BoidsSim(const std::shared_ptr<Render::Mesh::Mesh>& mesh, const BoidsParams& params);
     ~BoidsSim() = default;
 
     void update(float delta);
@@ -24,8 +25,7 @@ private:
     std::unique_ptr<BoidsMaterial> material;
     std::unique_ptr<BoidsData> data;
     std::unique_ptr<BoidsCompute> compute;
-    int boids = 10000;
-    glm::vec3 bounds = glm::vec3(128.0f, 64.0f, 128.0f);
+    const BoidsParams params;
 };
 
 }

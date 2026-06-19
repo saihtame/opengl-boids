@@ -1,4 +1,5 @@
 #include "boids_sim.hpp"
+#include "boids/boids_params.hpp"
 #include "render/material/shader.hpp"
 #include <glm/ext/vector_float3.hpp>
 #include <memory>
@@ -6,12 +7,12 @@
 
 namespace ParticleSim::Boids {
 
-BoidsSim::BoidsSim(const std::shared_ptr<Render::Mesh::Mesh>& value) {
+BoidsSim::BoidsSim(const std::shared_ptr<Render::Mesh::Mesh>& mesh, const BoidsParams& parameters) : params(parameters) {
     update_model_trans();
     material = std::make_unique<BoidsMaterial>();
-    if (value != nullptr)
-        data = std::make_unique<BoidsData>(value, boids, bounds);
-    compute = std::make_unique<BoidsCompute>(boids, bounds);
+    if (mesh != nullptr)
+        data = std::make_unique<BoidsData>(mesh, params);
+    compute = std::make_unique<BoidsCompute>(params);
 }
 
 void BoidsSim::update(float delta) {
@@ -33,7 +34,7 @@ void BoidsSim::render(const glm::mat4& view, const glm::mat4& projection) const 
     // Bind VAO
     glBindVertexArray(data->VAO);
     // Render
-    glDrawElementsInstanced(GL_TRIANGLES, data->indices_size, GL_UNSIGNED_INT, 0, boids);
+    glDrawElementsInstanced(GL_TRIANGLES, data->indices_size, GL_UNSIGNED_INT, 0, params.boids);
 }
 
 Render::BlendMode BoidsSim::get_blend_mode() const {

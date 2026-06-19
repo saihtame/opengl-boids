@@ -7,16 +7,16 @@
 
 namespace ParticleSim::Boids {
 
-BoidsData::BoidsData(const std::shared_ptr<Render::Mesh::Mesh>& mesh, int boids, glm::vec3 bounds)
-    : Render::Mesh::MeshRenderData(mesh) {
+BoidsData::BoidsData(const std::shared_ptr<Render::Mesh::Mesh>& mesh, const BoidsParams& parameters)
+    : Render::Mesh::MeshRenderData(mesh), params(parameters) {
     // Prepare instances data
     std::vector<float> data;
-    data.resize(boids * 8);
-    for (int i = 0; i < boids; i++) {
+    data.resize(params.boids * 8);
+    for (int i = 0; i < params.boids; i++) {
         // Position data
-        data[i * 8]     = glm::linearRand(1.0f, bounds.x - 1.0f);
-        data[i * 8 + 1] = glm::linearRand(1.0f, bounds.y - 1.0f);
-        data[i * 8 + 2] = glm::linearRand(1.0f, bounds.z - 1.0f);
+        data[i * 8]     = glm::linearRand(1.0f, params.bounds.x - 1.0f);
+        data[i * 8 + 1] = glm::linearRand(1.0f, params.bounds.y - 1.0f);
+        data[i * 8 + 2] = glm::linearRand(1.0f, params.bounds.z - 1.0f);
         data[i * 8 + 3] = 0.0f; // Padding
         // Velocity data
         glm::vec3 vel = glm::normalize(glm::vec3(

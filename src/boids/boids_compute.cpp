@@ -1,4 +1,5 @@
 #include "boids_compute.hpp"
+#include "boids/boids_params.hpp"
 #include "render/material/shader.hpp"
 #include <glm/ext/vector_float3.hpp>
 #include <iostream>
@@ -7,8 +8,7 @@
 
 namespace ParticleSim::Boids {
 
-BoidsCompute::BoidsCompute(int boids, glm::vec3 bounds) : bounds(bounds), boids(boids) {
-    dispatches = (boids + 31) / 32;
+BoidsCompute::BoidsCompute(const BoidsParams& parameters) : params(parameters) {
 
     // Load shader file
     auto shader_str = read_file(shader_path);
@@ -36,33 +36,29 @@ void BoidsCompute::compute(float delta, BoidsData& data) {
     // Bind shader program
     glUseProgram(program_id);
 
-    // Set boid speed uniform
-    auto loc = get_uniform_location("boidSpeed");
-    glUniform1f(loc, 10.0f);
+    // Set boids uniform
+    auto loc = get_uniform_location("boidCount");
+    glUniform1i(loc, params.boids);
 
     // Set bounds uniform
     loc = get_uniform_location("bounds");
-    glUniform3f(loc, bounds.x, bounds.y, bounds.z);
+    glUniform3f(loc, params.bounds.x, params.bounds.y, params.bounds.z);
 
-    // Set boids uniform
-    loc = get_uniform_location("boidCount");
-    glUniform1i(loc, boids);
+    // Set boid speed uniform
+    loc = get_uniform_location("boidSpeed");
+    glUniform1f(loc, params.boid_speed);
 
     // Set view range uniform
     loc = get_uniform_location("viewRange");
-    glUniform1f(loc, 30.0f);
+    glUniform1f(loc, params.view_range);
 
     // Set view angle uniform
     loc = get_uniform_location("viewCosine");
-    glUniform1f(loc, 0.0f);
+    glUniform1f(loc, params.view_cosine);
 
     // Set delta uniform
     loc = get_uniform_location("delta");
     glUniform1f(loc, delta);
-
-    // Set steering force uniform
-    loc = get_uniform_location("steeringForce");
-    glUniform1f(loc, 1.0f);
 
     // Set instances data input uniform
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, data.instances_BO_A);
@@ -71,6 +67,7 @@ void BoidsCompute::compute(float delta, BoidsData& data) {
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, data.instances_BO_B);
 
     // Dispatch shader program
+    int dispatches = (params.boids + 31) / 32;
     glDispatchCompute(dispatches, 1, 1);
     glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
 

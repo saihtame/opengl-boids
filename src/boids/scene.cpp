@@ -1,4 +1,5 @@
 #include "scene.hpp"
+#include "boids/boids_params.hpp"
 #include "boids/boids_sim.hpp"
 #include "render/blend_mode.hpp"
 #include "render/material/color_material.hpp"
@@ -72,8 +73,10 @@ std::vector<std::shared_ptr<Render::Renderable>> get_scene() {
     /*---- Boids ----*/
     auto boid_mesh = Render::Mesh::generate_cone(0.2f, 1.0f, 3);
     auto bounds = glm::vec3(scene_width, scene_height, scene_length);
-    auto boids_sim = std::make_shared<BoidsSim>(boid_mesh);
-    boids_sim->move_to(-bounds * 0.5f);
+    BoidsParams params;
+    params.bounds = bounds;
+    auto boids_sim = std::make_shared<BoidsSim>(boid_mesh, params);
+    boids_sim->move_to(-bounds / 2.0f);
     renderables.push_back(boids_sim);
 
     /*---- Scene Offset ----*/

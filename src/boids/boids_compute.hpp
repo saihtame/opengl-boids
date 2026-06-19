@@ -7,19 +7,18 @@ namespace ParticleSim::Boids {
 
 class BoidsCompute {
 public:
-    BoidsCompute(int boids, glm::vec3 bounds);
+    BoidsCompute(const BoidsParams& params);
     ~BoidsCompute();
 
-    void compute(float boidSpeed, BoidsData& data);
+    void compute(float delta, BoidsData& data);
 
-private:
-    glm::vec3 bounds;
+private: // Runtime variables
+    const BoidsParams& params;
     unsigned int program_id = 0;
-    int dispatches = 0;
-    int boids = 0;
     std::unordered_map<std::string, unsigned int> uniform_locations;
 
-private:
+private: // Constants
+    const int work_group_size = 32;
     const std::string shader_path = "shaders/compute/boids.comp";
 
 private:
