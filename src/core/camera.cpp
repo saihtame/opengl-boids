@@ -78,7 +78,7 @@ void Camera::zoom(float amount) {
 }
 
 glm::mat4 Camera::get_projection(float view_width, float view_height) const {
-    return glm::perspective(glm::radians(fov), (float)(view_width/view_height), 0.1f, 200.0f);
+    return glm::perspective(glm::radians(fov), (float)(view_width/view_height), 0.1f, 300.0f);
 }
 
 inline void Camera::update_view() {

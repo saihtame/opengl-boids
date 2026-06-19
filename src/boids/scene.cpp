@@ -72,7 +72,7 @@ std::vector<std::shared_ptr<Render::Renderable>> get_scene() {
     /*---- Boids ----*/
     auto boid_mesh = Render::Mesh::generate_cone(0.2f, 1.0f, 3);
     auto bounds = glm::vec3(scene_width, scene_height, scene_length);
-    auto boids_sim = std::make_shared<BoidsSim>(boid_mesh, 10000, bounds);
+    auto boids_sim = std::make_shared<BoidsSim>(boid_mesh);
     boids_sim->move_to(-bounds * 0.5f);
     renderables.push_back(boids_sim);
 

@@ -1,8 +1,10 @@
 #pragma once
+#include "boids/boids_compute.hpp"
 #include "boids/boids_material.hpp"
-#include "boids/boids_mesh_render_data.hpp"
+#include "boids/boids_data.hpp"
 #include "render/mesh/mesh.hpp"
 #include "render/renderable.hpp"
+#include <glm/ext/vector_float3.hpp>
 #include <memory>
 
 
@@ -10,7 +12,7 @@ namespace ParticleSim::Boids {
 
 class BoidsSim: public Render::Renderable {
 public:
-    BoidsSim(const std::shared_ptr<Render::Mesh::Mesh>& value, int boids, glm::vec3 bounds);
+    BoidsSim(const std::shared_ptr<Render::Mesh::Mesh>& value);
     ~BoidsSim() = default;
 
     void update(float delta);
@@ -20,9 +22,13 @@ public:
 
 private:
     std::unique_ptr<BoidsMaterial> material;
-    std::unique_ptr<BoidsMeshRenderData> render_data;
-    int boids;
-    glm::vec3 bounds;
+    std::unique_ptr<BoidsData> data;
+    std::unique_ptr<BoidsCompute> compute;
+    int boids = 1024;
+    float boid_speed = 10.0f;
+    glm::vec3 bounds = glm::vec3(128.0f, 64.0f, 128.0f);
+    glm::ivec3 grid_size = glm::ivec3(64, 32, 64);
+    glm::vec3 grid_box_size = glm::vec3(2.0f, 2.0f, 2.0f);
 };
 
 }
