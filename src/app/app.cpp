@@ -109,6 +109,10 @@ bool App::run() {
     uint64_t last_tick = SDL_GetPerformanceCounter();
     double frequency = (double)SDL_GetPerformanceFrequency();
     double delta = 0.0;
+    float fps = 0.0f;
+    float fps_print_interval = 1.0f;
+    float fps_print_time = 0.0f;
+    int frame_count = 0;
 
     while (!quit) {
         handle_inputs();
@@ -116,6 +120,15 @@ bool App::run() {
         uint64_t tick = SDL_GetPerformanceCounter();
         delta = (double)(tick - last_tick) / frequency;
         last_tick = tick;
+        // Calculate fps
+        fps_print_time += delta;
+        frame_count++;
+        if (fps_print_time >= fps_print_interval) {
+            fps = frame_count / fps_print_interval;
+            std::cout << "fps: " << fps << std::endl;
+            fps_print_time = 0.0f;
+            frame_count = 0;
+        }
 
         // Update objects
         for (auto& obj : objects)
