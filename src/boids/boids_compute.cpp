@@ -56,6 +56,22 @@ void BoidsCompute::compute(float delta, BoidsData& data) {
     loc = get_uniform_location("viewCosine");
     glUniform1f(loc, params.view_cosine);
 
+    // Set acceleration uniform
+    loc = get_uniform_location("acceleration");
+    glUniform1f(loc, params.acceleration);
+
+    // Set seperation factor uniform
+    loc = get_uniform_location("seperationFactor");
+    glUniform1f(loc, params.seperationFactor);
+
+    // Set alignment factor uniform
+    loc = get_uniform_location("alignmentFactor");
+    glUniform1f(loc, params.alignmentFactor);
+
+    // Set cohesion factor uniform
+    loc = get_uniform_location("cohesionFactor");
+    glUniform1f(loc, params.cohesionFactor);
+
     // Set delta uniform
     loc = get_uniform_location("delta");
     glUniform1f(loc, delta);

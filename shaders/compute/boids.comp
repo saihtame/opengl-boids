@@ -6,7 +6,10 @@ layout (location = 2) uniform float boidSpeed;
 layout (location = 3) uniform float acceleration;
 layout (location = 4) uniform float viewRange;
 layout (location = 5) uniform float viewCosine;
-layout (location = 6) uniform float delta;
+layout (location = 6) uniform float seperationFactor;
+layout (location = 7) uniform float alignmentFactor;
+layout (location = 8) uniform float cohesionFactor;
+layout (location = 9) uniform float delta;
 
 struct Instance {
     vec3 pos;
@@ -56,6 +59,8 @@ void main() {
 
     // React to other boids
     vec3 seperation = vec3(0.0f);
+    vec3 velocityMatch = vec3(0.0f);
+    vec3 cohesion = vec3(0.0f);
     int neighbours = 0;
     for (uint i = 0; i < boidCount; i++) {
         // Skip check self
@@ -78,15 +83,25 @@ void main() {
         // Increment neighbour count
         neighbours++;
 
-        // Avoid collision
-        seperation += -dirToOtherNormal * (1 / distanceToOther);
+        // Seperation
+        float distanceMul = 1 / distanceToOther;
+        seperation += -dirToOtherNormal * distanceMul;
+
+        // Allignment
+        vec3 velDiff = other.vel - instance.vel;
+        velocityMatch += velDiff * distanceMul;
+
+        // Cohesion
+        cohesion += dirToOther;
     }
     // Only update velocity if any neighbours was found
     if (neighbours != 0) {
-        seperation = seperation / neighbours;
+        seperation = (seperation / neighbours) * seperationFactor;
+        velocityMatch = (velocityMatch / neighbours) * alignmentFactor;
+        cohesion = (cohesion / neighbours) * alignmentFactor;
 
         // Calculate new desired velocity
-        vec3 newVel = seperation;
+        vec3 newVel = seperation + velocityMatch + cohesion;
         newVel = canNormalize(newVel) ? normalize(newVel) : instance.vel;
 
         // Apply velocity over time to current velocity
