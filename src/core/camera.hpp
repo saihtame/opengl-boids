@@ -23,7 +23,7 @@ public:
     glm::mat4 view;
 
 private:
-    const float speed = 16.0;
+    const float speed = 64.0;
     const float sensitivity = 0.2;
     const float max_fov = 45.0f;
     const float min_fov = 1.0f;

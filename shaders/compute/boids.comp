@@ -184,8 +184,7 @@ void main() {
     // Get boid force from neighbours
     vec3 force = reactToNeighbours(instance);
     // Get collision avoidance force
-    vec3 collisionAvoidanceForce = getCollisionAvoidance(instance.pos, instance.vel) * collisionAvoidanceStrength;
-    force += collisionAvoidanceForce;
+    force += getCollisionAvoidance(instance.pos, instance.vel) * collisionAvoidanceStrength;
 
     // Apply forces
     instance.vel = applySteering(instance.vel, instance.vel + force);
