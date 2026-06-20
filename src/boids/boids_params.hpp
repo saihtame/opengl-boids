@@ -6,7 +6,7 @@
 namespace ParticleSim::Boids {
 
 struct BoidsParams {
-    int boids = 100000;
+    int boids = 10000;
     glm::vec3 bounds = glm::vec3(128.0f, 64.0f, 128.0f);
     float boid_max_speed = 25.0f;
     float boid_min_speed = 10.0f;

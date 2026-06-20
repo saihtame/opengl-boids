@@ -27,7 +27,6 @@ layout(std430, binding = 1) buffer InstanceDataOut
     Instance instancesOut[];
 };
 
-
 bool canNormalize(vec3 v) { return dot(v, v) > 1e-8; }
 
 vec3 applySteering(vec3 currentVel, vec3 newVel) {
@@ -41,21 +40,14 @@ vec3 applySteering(vec3 currentVel, vec3 newVel) {
     return currentVel + steering;
 }
 
-void main() {
-    uint id = gl_GlobalInvocationID.x;
-    // Skip if id is above boid count
-    if (id >= boidCount) return;
-    // Get input instance
-    Instance instance = instancesIn[id];
-
-    // React to other boids
+Instance reactToNeighbours(Instance instance) {
     vec3 seperation = vec3(0.0f);
     vec3 alignment = vec3(0.0f);
     vec3 cohesion = vec3(0.0f);
     int neighbours = 0;
     for (uint i = 0; i < boidCount; i++) {
         // Skip self
-        if (i == id) continue;
+        if (i == gl_GlobalInvocationID.x) continue;
         // Get other instance
         Instance other = instancesIn[i];
         // Skip boids out of view range
@@ -89,6 +81,18 @@ void main() {
         // Apply velocity over time to current velocity
         instance.vel = applySteering(instance.vel, newVel);
     }
+    return instance;
+}
+
+void main() {
+    uint id = gl_GlobalInvocationID.x;
+    // Skip if id is above boid count
+    if (id >= boidCount) return;
+    // Get input instance
+    Instance instance = instancesIn[id];
+
+    // React to neighbouring boids
+    instance = reactToNeighbours(instance);
 
     // Clamp velocity to min and max speed
     float speed = length(instance.vel);
