@@ -56,9 +56,13 @@ void BoidsCompute::compute(float delta, BoidsData& data) {
     loc = get_uniform_location("viewRange");
     glUniform1f(loc, params.view_range);
 
-    // Set view angle uniform
+    // Set view cosine uniform
     loc = get_uniform_location("viewCosine");
     glUniform1f(loc, params.view_cosine);
+
+    // Set collision avoidance strength uniform
+    loc = get_uniform_location("collisionAvoidanceStrength");
+    glUniform1f(loc, params.collision_avoidance_strength);
 
     // Set acceleration uniform
     loc = get_uniform_location("acceleration");

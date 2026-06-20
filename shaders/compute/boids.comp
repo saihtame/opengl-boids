@@ -7,10 +7,11 @@ layout (location = 3) uniform float boidMinSpeed;
 layout (location = 4) uniform float acceleration;
 layout (location = 5) uniform float viewRange;
 layout (location = 6) uniform float viewCosine;
-layout (location = 7) uniform float seperationFactor;
-layout (location = 8) uniform float alignmentFactor;
-layout (location = 9) uniform float cohesionFactor;
-layout (location = 10) uniform float delta;
+layout (location = 7) uniform float collisionAvoidanceStrength;
+layout (location = 8) uniform float seperationFactor;
+layout (location = 9) uniform float alignmentFactor;
+layout (location = 10) uniform float cohesionFactor;
+layout (location = 11) uniform float delta;
 
 struct Instance {
     vec3 pos;
@@ -29,6 +30,12 @@ layout(std430, binding = 1) buffer InstanceDataOut
 
 bool canNormalize(vec3 v) { return dot(v, v) > 1e-8; }
 
+/*---- Collision detection ----*/
+vec3 getCollisionAvoidance(Instance instance) {
+    return vec3(0.0f);
+}
+
+/*---- Boids ----*/
 vec3 applySteering(vec3 currentVel, vec3 newVel) {
     // Get steering
     vec3 steering = (newVel - currentVel);
@@ -84,6 +91,7 @@ Instance reactToNeighbours(Instance instance) {
     return instance;
 }
 
+/*---- Main ----*/
 void main() {
     uint id = gl_GlobalInvocationID.x;
     // Skip if id is above boid count
