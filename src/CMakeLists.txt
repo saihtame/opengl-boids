@@ -13,6 +13,7 @@ target_link_libraries(particle_sim PRIVATE
     OpenGL::GL
     SDL3::SDL3
     glad
+    imgui
     stb::image
 )
 
