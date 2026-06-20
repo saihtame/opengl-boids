@@ -77,24 +77,27 @@ const float goldenRatio = 1.61803398875;
 const float PI = 3.14159265359;
 const float angleIncrement = PI * 2 * goldenRatio;
 const int numViewDirections = 200;
+const float numViewDirectionsRec = 1 / numViewDirections;
 vec3 getCollisionAvoidance(vec3 pos, vec3 currentDirection) {
+    // Cheap check for any collisions
     if (!sphereCast(pos, viewRange))
         return vec3(0.0);
 
+    // Get a normalized forward vector
     vec3 forward = canNormalize(currentDirection)
         ? currentDirection
         : vec3(0.0, 0.0, 1.0);
 
+    // Construct a rotation matrix
     mat3 basis = makeBasis(forward);
 
-    vec3 bestPoint = vec3(0.0);
-    float bestScore = -1e20;
-
+    // Check points on a sphere around the boid for a collision free direction
     for (int i = 0; i < numViewDirections; i++) {
-        float t = float(i) / float(numViewDirections);
+        float t = float(i) * numViewDirectionsRec;
         float inclination = acos(1.0 - 2.0 * t);
         float azimuth = angleIncrement * float(i);
 
+        // Construct point
         vec3 localPoint = vec3(
             sin(inclination) * cos(azimuth),
             sin(inclination) * sin(azimuth),
@@ -104,17 +107,12 @@ vec3 getCollisionAvoidance(vec3 pos, vec3 currentDirection) {
         vec3 point = basis * localPoint;
 
         if (!pointCast(pos + point * viewRange)) {
-            float score = dot(point, forward);
-            if (score > bestScore) {
-                bestScore = score;
-                bestPoint = point;
-            }
+            // First point we find, is also the one that aligns most closely with currentDir
+            return point;
         }
     }
 
-    if (bestScore > -1e10)
-        return bestPoint;
-
+    // Fallback to center of bounding box
     vec3 toCenter = bounds * 0.5 - pos;
     return canNormalize(toCenter) ? normalize(toCenter) : -normalize(forward);
 }

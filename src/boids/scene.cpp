@@ -28,7 +28,7 @@ std::vector<std::shared_ptr<Render::Renderable>> get_scene() {
     renderables.push_back(floor);
 
     /*---- Boids ----*/
-    auto boid_mesh = Render::Mesh::generate_cone(0.2f, 1.0f, 3);
+    auto boid_mesh = Render::Mesh::generate_cone(0.2f, 1.0f, 2);
     auto bounds = glm::vec3(scene_width, scene_height, scene_length);
     BoidsParams params;
     params.bounds = bounds;
