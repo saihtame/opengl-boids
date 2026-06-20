@@ -23,7 +23,7 @@ BoidsData::BoidsData(const std::shared_ptr<Render::Mesh::Mesh>& mesh, const Boid
             glm::linearRand(-1.0, 1.0),
             glm::linearRand(-1.0, 1.0),
             glm::linearRand(-1.0, 1.0)
-        ));
+        )) * glm::linearRand(params.boid_min_speed, params.boid_max_speed);
         data[i * 8 + 4] = vel.x;
         data[i * 8 + 5] = vel.y;
         data[i * 8 + 6] = vel.z;

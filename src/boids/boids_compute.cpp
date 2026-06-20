@@ -44,9 +44,13 @@ void BoidsCompute::compute(float delta, BoidsData& data) {
     loc = get_uniform_location("bounds");
     glUniform3f(loc, params.bounds.x, params.bounds.y, params.bounds.z);
 
-    // Set boid speed uniform
-    loc = get_uniform_location("boidSpeed");
-    glUniform1f(loc, params.boid_speed);
+    // Set boid max speed uniform
+    loc = get_uniform_location("boidMaxSpeed");
+    glUniform1f(loc, params.boid_max_speed);
+
+    // Set boid min speed uniform
+    loc = get_uniform_location("boidMinSpeed");
+    glUniform1f(loc, params.boid_min_speed);
 
     // Set view range uniform
     loc = get_uniform_location("viewRange");
