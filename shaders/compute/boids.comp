@@ -28,10 +28,7 @@ layout(std430, binding = 1) buffer InstanceDataOut
 };
 
 
-bool canNormalize(vec3 v)
-{
-    return dot(v, v) > 1e-8;
-}
+bool canNormalize(vec3 v) { return dot(v, v) > 1e-8; }
 
 vec3 applySteering(vec3 currentVel, vec3 newVel) {
     // Get steering
@@ -46,10 +43,8 @@ vec3 applySteering(vec3 currentVel, vec3 newVel) {
 
 void main() {
     uint id = gl_GlobalInvocationID.x;
-
     // Skip if id is above boid count
     if (id >= boidCount) return;
-
     // Get input instance
     Instance instance = instancesIn[id];
 
@@ -59,35 +54,28 @@ void main() {
     vec3 cohesion = vec3(0.0f);
     int neighbours = 0;
     for (uint i = 0; i < boidCount; i++) {
-        // Skip check self
+        // Skip self
         if (i == id) continue;
-
         // Get other instance
         Instance other = instancesIn[i];
-
         // Skip boids out of view range
         vec3 dirToOther = other.pos - instance.pos;
         if (!canNormalize(dirToOther)) continue;
         float distanceToOther = length(dirToOther);
         if (distanceToOther > viewRange) continue;
-
         // Skip boids out of viewing angle
         vec3 dirToOtherNormal = normalize(dirToOther);
         vec3 velNormalized = normalize(instance.vel);
         float angleToBoid = dot(dirToOtherNormal, velNormalized);
         if (angleToBoid < viewCosine) continue;
-
         // Increment neighbour count
         neighbours++;
-
         // Seperation
         float distanceMul = 1 / distanceToOther;
         seperation += -dirToOtherNormal * distanceMul;
-
         // Allignment
         vec3 velDiff = other.vel - instance.vel;
         alignment += velDiff;
-
         // Cohesion
         cohesion += dirToOther;
     }
@@ -96,10 +84,8 @@ void main() {
         seperation = (seperation / neighbours) * seperationFactor;
         alignment = (alignment / neighbours) * alignmentFactor;
         cohesion = (cohesion / neighbours) * cohesionFactor;
-
         // Calculate new desired velocity
         vec3 newVel = seperation + alignment + cohesion;
-
         // Apply velocity over time to current velocity
         instance.vel = applySteering(instance.vel, newVel);
     }
