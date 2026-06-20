@@ -8,6 +8,7 @@ layout (location = 4) in vec3 aInstanceVel;
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
+uniform float boidMaxSpeed;
 
 out vec3 v_color;
 
@@ -28,6 +29,8 @@ void main() {
     vec3 worldPos = rotatedPos + aInstancePos;
 
     gl_Position = projection * view * model * vec4(worldPos, 1.0);
-    v_color = (aInstanceVel + vec3(1.0)) * 0.5;
+
+    // Calculate color
+    v_color = normalize(aInstanceVel + vec3(boidMaxSpeed));
 }
 

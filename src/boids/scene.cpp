@@ -1,7 +1,6 @@
 #include "scene.hpp"
 #include "boids/boids_params.hpp"
 #include "boids/boids_sim.hpp"
-#include "render/blend_mode.hpp"
 #include "render/material/color_material.hpp"
 #include "render/mesh/primitives.hpp"
 #include "render/mesh_instance.hpp"
@@ -20,7 +19,7 @@ std::vector<std::shared_ptr<Render::Renderable>> get_scene() {
 
     /*---- Floor ----*/
     auto floor_mat = std::make_shared<Render::Material::ColorMaterial>();
-    floor_mat->color = glm::vec4(0.08f, 0.705f, 0.08f, 1.0f);
+    floor_mat->color = glm::vec4(0.05f, 0.65f, 0.05f, 1.0f);
     auto floor_roof_mesh = Render::Mesh::generate_square_2sides(scene_width, scene_length);
     auto floor = std::make_shared<Render::MeshInstance>(floor_roof_mesh);
     floor->material = floor_mat;
