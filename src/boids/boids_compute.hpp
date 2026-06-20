@@ -20,6 +20,7 @@ private: // Runtime variables
 
 private: // Constants
     const int work_group_size = 32;
+    const int initialized_boids;
     const std::string shader_path = "shaders/compute/boids.comp";
 
 private:

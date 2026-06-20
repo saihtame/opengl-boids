@@ -18,15 +18,18 @@ struct BoidsParams {
     float view_cosine = -0.5f; // 90 degree view angle
     float collision_avoidance_strength = 10.0f;
     float acceleration = 8.0;
-    float seperationFactor = 3.0f;
-    float alignmentFactor = 0.40f;
-    float cohesionFactor = 0.1f;
+    float seperation_factor = 3.0f;
+    float alignment_factor = 0.40f;
+    float cohesion_factor = 0.1f;
+
+    // Tells the simulation to restart
+    bool should_restart = false;
 
     void set_view_cosine(float degrees) {
         view_cosine = glm::cos(glm::radians(double(degrees / 2)));
     }
 
-    float get_view_degrees() {
+    float get_view_degrees() const {
         return glm::degrees(glm::acos(view_cosine)) * 2;
     }
 };

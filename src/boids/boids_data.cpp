@@ -8,8 +8,8 @@
 
 namespace ParticleSim::Boids {
 
-BoidsData::BoidsData(const std::shared_ptr<Render::Mesh::Mesh>& mesh, const std::shared_ptr<BoidsParams>& parameters)
-    : Render::Mesh::MeshRenderData(mesh), params(parameters) {
+BoidsData::BoidsData(const std::shared_ptr<Render::Mesh::Mesh>& mesh, const std::shared_ptr<BoidsParams>& params)
+    : Render::Mesh::MeshRenderData(mesh) {
     // Prepare instances data
     std::vector<float> data;
     data.resize(params->boids * 8);

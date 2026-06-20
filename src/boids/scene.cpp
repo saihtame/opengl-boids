@@ -17,6 +17,13 @@ Scene::Scene(const std::shared_ptr<BoidsParams>& params) : params(params) {
 }
 
 void Scene::update(float delta) {
+    if (params != nullptr) {
+        if (params->should_restart) {
+            reset_scene();
+            params->should_restart = false;
+        }
+    }
+
     if (sim != nullptr)
         sim->update(delta);
 }

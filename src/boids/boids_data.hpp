@@ -12,7 +12,6 @@ public:
     BoidsData(const std::shared_ptr<Render::Mesh::Mesh>& mesh, const std::shared_ptr<BoidsParams>& params);
     ~BoidsData();
 
-    std::shared_ptr<BoidsParams> params;
     unsigned int instances_BO_A = 0;
     unsigned int instances_BO_B = 0;
 

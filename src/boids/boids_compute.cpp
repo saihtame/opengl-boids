@@ -8,8 +8,8 @@
 
 namespace ParticleSim::Boids {
 
-BoidsCompute::BoidsCompute(const std::shared_ptr<BoidsParams>& parameters) : params(parameters) {
-
+BoidsCompute::BoidsCompute(const std::shared_ptr<BoidsParams>& parameters)
+    : params(parameters), initialized_boids(parameters->boids) {
     // Load shader file
     auto shader_str = read_file(shader_path);
     const char* shader_src = shader_str.c_str();
@@ -38,60 +38,48 @@ void BoidsCompute::compute(float delta, BoidsData& data) {
 
     // Set boids uniform
     auto loc = get_uniform_location("boidCount");
-    glUniform1i(loc, params->boids);
-
+    glUniform1i(loc, initialized_boids);
     // Set bounds uniform
     loc = get_uniform_location("bounds");
     glUniform3f(loc, params->bounds.x, params->bounds.y, params->bounds.z);
-
     // Set boid max speed uniform
     loc = get_uniform_location("boidMaxSpeed");
     glUniform1f(loc, params->boid_max_speed);
-
     // Set boid min speed uniform
     loc = get_uniform_location("boidMinSpeed");
     glUniform1f(loc, params->boid_min_speed);
-
     // Set view range uniform
     loc = get_uniform_location("viewRange");
     glUniform1f(loc, params->view_range);
-
     // Set view cosine uniform
     loc = get_uniform_location("viewCosine");
     glUniform1f(loc, params->view_cosine);
-
     // Set collision avoidance strength uniform
     loc = get_uniform_location("collisionAvoidanceStrength");
     glUniform1f(loc, params->collision_avoidance_strength);
-
     // Set acceleration uniform
     loc = get_uniform_location("acceleration");
     glUniform1f(loc, params->acceleration);
-
     // Set seperation factor uniform
     loc = get_uniform_location("seperationFactor");
-    glUniform1f(loc, params->seperationFactor);
-
+    glUniform1f(loc, params->seperation_factor);
     // Set alignment factor uniform
     loc = get_uniform_location("alignmentFactor");
-    glUniform1f(loc, params->alignmentFactor);
-
+    glUniform1f(loc, params->alignment_factor);
     // Set cohesion factor uniform
     loc = get_uniform_location("cohesionFactor");
-    glUniform1f(loc, params->cohesionFactor);
-
+    glUniform1f(loc, params->cohesion_factor);
     // Set delta uniform
     loc = get_uniform_location("delta");
     glUniform1f(loc, delta);
 
     // Set instances data input uniform
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, data.instances_BO_A);
-
     // Set instances data output uniform
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, data.instances_BO_B);
 
     // Dispatch shader program
-    int dispatches = (params->boids + 31) / 32;
+    int dispatches = (initialized_boids + 31) / 32;
     glDispatchCompute(dispatches, 1, 1);
     glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
 

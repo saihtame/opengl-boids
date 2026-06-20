@@ -64,7 +64,7 @@ App::App() {
     add_renderable(boidsScene);
 
     // Create UI
-    ui = std::make_unique<UI>();
+    ui = std::make_unique<UI>(win, gl_context, boidsParams);
 }
 
 App::~App() {
@@ -82,12 +82,12 @@ bool App::run() {
     glEnable(GL_DEPTH_TEST);
     // Enable face culling
     glEnable(GL_CULL_FACE);  
-    // Enable mouse capture
-    SDL_SetWindowRelativeMouseMode(win, true);
 
     // Delta time
     Timer timer;
 
+    // Capture mouse if enabled
+    SDL_SetWindowRelativeMouseMode(win, capturing_mouse);
     while (!quit) {
         handle_inputs();
 
@@ -103,6 +103,8 @@ bool App::run() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         // Draw screen
         renderer->render(cam.get());
+        // Draw UI
+        ui->render();
 
         SDL_GL_SwapWindow(win);
     }
@@ -159,17 +161,34 @@ inline void App::handle_inputs() {
         // Handle quit event
         if (event.type == SDL_EVENT_QUIT) {
             quit = true;
+            continue;
         }
         // Handlw window resize
         if (event.type == SDL_EVENT_WINDOW_RESIZED) {
             window_resized(event.window.data1, event.window.data2);
-        } else if (event.type == SDL_EVENT_MOUSE_MOTION) {
-            cam->rotate_yaw_pitch(-event.motion.xrel, -event.motion.yrel);
-        } else if (event.type == SDL_EVENT_MOUSE_WHEEL) {
-            if (event.wheel.direction == SDL_MOUSEWHEEL_NORMAL) {
-                cam->zoom(-event.wheel.y);
-            } else {
-                cam->zoom(event.wheel.y);
+            continue;
+        }
+        // Handle UI events
+        if (ui->processEvent(&event))
+            continue;
+        // Handle mouse movement events
+        if (capturing_mouse) {
+            if (event.type == SDL_EVENT_MOUSE_MOTION) {
+                cam->rotate_yaw_pitch(-event.motion.xrel, -event.motion.yrel);
+            } else if (event.type == SDL_EVENT_MOUSE_WHEEL) {
+                if (event.wheel.direction == SDL_MOUSEWHEEL_NORMAL) {
+                    cam->zoom(-event.wheel.y);
+                } else {
+                    cam->zoom(event.wheel.y);
+                }
+            }
+        }
+        if (event.type == SDL_EVENT_KEY_DOWN) {
+            if (event.key.scancode == SDL_SCANCODE_TAB) {
+                // Toggle mouse capture
+                capturing_mouse = !capturing_mouse;
+                // Enable mouse capture
+                SDL_SetWindowRelativeMouseMode(win, capturing_mouse);
             }
         }
     }

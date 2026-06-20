@@ -31,6 +31,7 @@ private: // Runtime properties
     SDL_GLContext gl_context = nullptr;
     // Input handling
     bool quit = false;
+    bool capturing_mouse = true;
     SDL_Event event;
     // Camera
     std::shared_ptr<Core::Camera> cam;
