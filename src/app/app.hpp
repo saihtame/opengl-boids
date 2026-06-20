@@ -38,6 +38,7 @@ private: // Runtime properties
     std::unique_ptr<Render::Renderer> renderer;
 
 private:
+    inline void setup_window();
     inline void handle_inputs();
     inline void window_resized(float width, float height);
 };

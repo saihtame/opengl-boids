@@ -1,4 +1,5 @@
 #include "app/app.hpp"
+#include "boids/scene.hpp"
 #include "render/renderable.hpp"
 #include "render/renderer.hpp"
 #include <SDL3/SDL.h>
@@ -32,38 +33,8 @@ void GLAPIENTRY MessageCallback(GLenum,
 }
 
 App::App() {
-    SDL_Init(SDL_INIT_VIDEO);
+    setup_window();
 
-    // Set OpenGL attributes
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-
-    // Create window
-    win = SDL_CreateWindow("Particle Sim", window_width, window_height, window_flags);
-    if (win == nullptr) {
-        std::cerr << "SDL_CreateWindow Error: " << SDL_GetError() << std::endl;
-        std::exit(1);
-    }
-
-    // Create OpenGL context
-    gl_context = SDL_GL_CreateContext(win);
-    if (gl_context == nullptr) {
-        std::cerr << "SDL_GL_CreateContext Error: " << SDL_GetError() << std::endl;
-        std::exit(1);
-    }
-
-    // One of these is correct, depending on how your GLAD files were generated:
-    if (!gladLoadGL((GLADloadfunc)SDL_GL_GetProcAddress)) {
-        std::cerr << "Failed to initialize GLAD" << std::endl;
-        std::exit(1);
-    }
-
-    glEnable(GL_DEBUG_OUTPUT);
-    glDebugMessageCallback(MessageCallback, 0);
- 
     // Create renderer
     renderer = std::make_unique<Render::Renderer>();
 
@@ -82,6 +53,12 @@ App::App() {
     renderer->skybox = skybox;
 
     window_resized(window_width, window_height);
+
+    // Get boid scene
+    auto boid_scene_renderables = ParticleSim::Boids::get_scene();
+    for (auto& ren : boid_scene_renderables)
+        add_renderable(ren);
+
 }
 
 App::~App() {
@@ -154,6 +131,40 @@ void App::add_object(std::shared_ptr<Core::Object3D> obj) {
 void App::add_renderable(std::shared_ptr<Render::Renderable> obj) {
     add_object(obj);
     renderer->add_renderable(obj);
+}
+
+inline void App::setup_window() {
+    SDL_Init(SDL_INIT_VIDEO);
+
+    // Set OpenGL attributes
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+
+    // Create window
+    win = SDL_CreateWindow("Particle Sim", window_width, window_height, window_flags);
+    if (win == nullptr) {
+        std::cerr << "SDL_CreateWindow Error: " << SDL_GetError() << std::endl;
+        std::exit(1);
+    }
+
+    // Create OpenGL context
+    gl_context = SDL_GL_CreateContext(win);
+    if (gl_context == nullptr) {
+        std::cerr << "SDL_GL_CreateContext Error: " << SDL_GetError() << std::endl;
+        std::exit(1);
+    }
+
+    // One of these is correct, depending on how your GLAD files were generated:
+    if (!gladLoadGL((GLADloadfunc)SDL_GL_GetProcAddress)) {
+        std::cerr << "Failed to initialize GLAD" << std::endl;
+        std::exit(1);
+    }
+
+    glEnable(GL_DEBUG_OUTPUT);
+    glDebugMessageCallback(MessageCallback, 0);
 }
 
 inline void App::handle_inputs() {

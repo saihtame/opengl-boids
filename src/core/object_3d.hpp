@@ -27,7 +27,7 @@ protected:
 protected:
     inline void update_model_trans() {
         model_trans = glm::translate(glm::mat4(1.0f), world_pos) // Position
-                    * glm::mat4_cast(orientation);             // Rotation
+                    * glm::mat4_cast(orientation);               // Rotation
         model_trans = glm::scale(model_trans, scale);            // Scale
     }
 };
