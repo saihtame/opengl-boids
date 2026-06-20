@@ -1,4 +1,5 @@
 #include "app/app.hpp"
+#include "app/timer.hpp"
 #include "boids/scene.hpp"
 #include "render/renderable.hpp"
 #include "render/renderer.hpp"
@@ -40,6 +41,8 @@ App::App() {
 
     // Create camera
     cam = std::make_shared<Core::Camera>();
+    // Move camera
+    cam->move_to(glm::vec3(0.0, 0.0, -5.0));
     add_object(cam);
 
     // Create skybox
@@ -59,6 +62,8 @@ App::App() {
     for (auto& ren : boid_scene_renderables)
         add_renderable(ren);
 
+    // Create UI
+    ui = std::make_unique<UI>();
 }
 
 App::~App() {
@@ -70,9 +75,6 @@ App::~App() {
 }
 
 bool App::run() {
-    // Move camera
-    cam->move_to(glm::vec3(0.0, 0.0, -5.0));
-
     // Draw in wireframe
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     // Enable depth testing
@@ -83,29 +85,13 @@ bool App::run() {
     SDL_SetWindowRelativeMouseMode(win, true);
 
     // Delta time
-    uint64_t last_tick = SDL_GetPerformanceCounter();
-    double frequency = (double)SDL_GetPerformanceFrequency();
-    double delta = 0.0;
-    float fps = 0.0f;
-    float fps_print_interval = 1.0f;
-    float fps_print_time = 0.0f;
-    int frame_count = 0;
+    Timer timer;
 
     while (!quit) {
         handle_inputs();
 
-        uint64_t tick = SDL_GetPerformanceCounter();
-        delta = (double)(tick - last_tick) / frequency;
-        last_tick = tick;
-        // Calculate fps
-        fps_print_time += delta;
-        frame_count++;
-        if (fps_print_time >= fps_print_interval) {
-            fps = frame_count / fps_print_interval;
-            std::cout << "fps: " << fps << std::endl;
-            fps_print_time = 0.0f;
-            frame_count = 0;
-        }
+        // Get delta time from timer
+        double delta = timer.get_delta();
 
         // Update objects
         for (auto& obj : objects)

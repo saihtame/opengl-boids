@@ -1,4 +1,5 @@
 #pragma once
+#include "app/ui.hpp"
 #include "core/camera.hpp"
 #include "core/object_3d.hpp"
 #include "render/renderable.hpp"
@@ -36,6 +37,7 @@ private: // Runtime properties
     // Objects
     std::vector<std::shared_ptr<Core::Object3D>> objects;
     std::unique_ptr<Render::Renderer> renderer;
+    std::unique_ptr<UI> ui;
 
 private:
     inline void setup_window();

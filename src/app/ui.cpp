@@ -4,5 +4,12 @@
 namespace ParticleSim::App {
 
 
+UI::UI() {
+
+}
+
+UI::~UI() {
+    
+}
 
 }
