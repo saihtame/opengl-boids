@@ -6,13 +6,13 @@
 namespace ParticleSim::Boids {
 
 struct BoidsParams {
-    int boids = 2048;
+    int boids = 4096;
     glm::vec3 bounds = glm::vec3(128.0f, 64.0f, 128.0f);
     float boid_speed = 10.0f;
     float view_range = 5.0f;
     float view_cosine = 0.0f;
     float acceleration = 5.0;
-    float seperationFactor = 0.8;
+    float seperationFactor = 1.2;
     float alignmentFactor = 0.5;
     float cohesionFactor = 0.5;
 

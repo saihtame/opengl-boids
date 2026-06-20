@@ -89,7 +89,7 @@ void main() {
 
         // Allignment
         vec3 velDiff = other.vel - instance.vel;
-        velocityMatch += velDiff * distanceMul;
+        velocityMatch += velDiff;
 
         // Cohesion
         cohesion += dirToOther;
@@ -98,7 +98,7 @@ void main() {
     if (neighbours != 0) {
         seperation = (seperation / neighbours) * seperationFactor;
         velocityMatch = (velocityMatch / neighbours) * alignmentFactor;
-        cohesion = (cohesion / neighbours) * alignmentFactor;
+        cohesion = (cohesion / neighbours) * cohesionFactor;
 
         // Calculate new desired velocity
         vec3 newVel = seperation + velocityMatch + cohesion;
