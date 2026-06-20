@@ -31,23 +31,96 @@ layout(std430, binding = 1) buffer InstanceDataOut
 bool canNormalize(vec3 v) { return dot(v, v) > 1e-8; }
 
 /*---- Collision detection ----*/
-vec3 getCollisionAvoidance(Instance instance) {
-    return vec3(0.0f);
+bool pointCast(vec3 pos) {
+    // Check bounds
+    if (pos.x < 0)
+        return true;
+    else if (pos.x > bounds.x)
+        return true;
+    if (pos.y < 0)
+        return true;
+    else if(pos.y > bounds.y)
+        return true;
+    if (pos.z < 0)
+        return true;
+    else if (pos.z > bounds.z)
+        return true;
+    return false;
+}
+
+bool sphereCast(vec3 pos, float radius) {
+    // Check bounds
+    if (pos.x - radius < 0)
+        return true;
+    else if (pos.x + radius > bounds.x)
+        return true;
+    if (pos.y - radius < 0)
+        return true;
+    else if(pos.y + radius > bounds.y)
+        return true;
+    if (pos.z - radius < 0)
+        return true;
+    else if (pos.z + radius > bounds.z)
+        return true;
+    return false;
+}
+
+mat3 makeBasis(vec3 forward) {
+    vec3 f = normalize(forward);
+    vec3 helper = abs(f.y) < 0.999 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
+    vec3 right = normalize(cross(helper, f));
+    vec3 up = cross(f, right);
+    return mat3(right, up, f);
+}
+
+const float goldenRatio = 1.61803398875;
+const float PI = 3.14159265359;
+const float angleIncrement = PI * 2 * goldenRatio;
+const int numViewDirections = 200;
+vec3 getCollisionAvoidance(vec3 pos, vec3 currentDirection) {
+    if (!sphereCast(pos, viewRange))
+        return vec3(0.0);
+
+    vec3 forward = canNormalize(currentDirection)
+        ? currentDirection
+        : vec3(0.0, 0.0, 1.0);
+
+    mat3 basis = makeBasis(forward);
+
+    vec3 bestPoint = vec3(0.0);
+    float bestScore = -1e20;
+
+    for (int i = 0; i < numViewDirections; i++) {
+        float t = float(i) / float(numViewDirections);
+        float inclination = acos(1.0 - 2.0 * t);
+        float azimuth = angleIncrement * float(i);
+
+        vec3 localPoint = vec3(
+            sin(inclination) * cos(azimuth),
+            sin(inclination) * sin(azimuth),
+            cos(inclination)
+        );
+
+        vec3 point = basis * localPoint;
+
+        if (!pointCast(pos + point * viewRange)) {
+            float score = dot(point, forward);
+            if (score > bestScore) {
+                bestScore = score;
+                bestPoint = point;
+            }
+        }
+    }
+
+    if (bestScore > -1e10)
+        return bestPoint;
+
+    vec3 toCenter = bounds * 0.5 - pos;
+    return canNormalize(toCenter) ? normalize(toCenter) : -normalize(forward);
 }
 
 /*---- Boids ----*/
-vec3 applySteering(vec3 currentVel, vec3 newVel) {
-    // Get steering
-    vec3 steering = (newVel - currentVel);
-    // Clamp steering to steeringForce * delta
-    float len = length(steering);
-    float maxLen = delta * acceleration;
-    if (len > maxLen)
-        steering *= maxLen / len;
-    return currentVel + steering;
-}
-
-Instance reactToNeighbours(Instance instance) {
+vec3 reactToNeighbours(Instance instance) {
     vec3 seperation = vec3(0.0f);
     vec3 alignment = vec3(0.0f);
     vec3 cohesion = vec3(0.0f);
@@ -84,14 +157,23 @@ Instance reactToNeighbours(Instance instance) {
         alignment = (alignment / neighbours) * alignmentFactor;
         cohesion = (cohesion / neighbours) * cohesionFactor;
         // Calculate new desired velocity
-        vec3 newVel = seperation + alignment + cohesion;
-        // Apply velocity over time to current velocity
-        instance.vel = applySteering(instance.vel, newVel);
+        return seperation + alignment + cohesion;
     }
-    return instance;
+    return vec3(0.0f);
 }
 
 /*---- Main ----*/
+vec3 applySteering(vec3 currentVel, vec3 newVel) {
+    // Get steering
+    vec3 steering = (newVel - currentVel);
+    // Clamp steering to steeringForce * delta
+    float len = length(steering);
+    float maxLen = delta * acceleration;
+    if (len > maxLen)
+        steering *= maxLen / len;
+    return currentVel + steering;
+}
+
 void main() {
     uint id = gl_GlobalInvocationID.x;
     // Skip if id is above boid count
@@ -99,8 +181,14 @@ void main() {
     // Get input instance
     Instance instance = instancesIn[id];
 
-    // React to neighbouring boids
-    instance = reactToNeighbours(instance);
+    // Get boid force from neighbours
+    vec3 force = reactToNeighbours(instance);
+    // Get collision avoidance force
+    vec3 collisionAvoidanceForce = getCollisionAvoidance(instance.pos, instance.vel) * collisionAvoidanceStrength;
+    force += collisionAvoidanceForce;
+
+    // Apply forces
+    instance.vel = applySteering(instance.vel, instance.vel + force);
 
     // Clamp velocity to min and max speed
     float speed = length(instance.vel);
@@ -112,23 +200,6 @@ void main() {
 
     // Update position based on velocity
     instance.pos += instance.vel * delta;
-
-    // Check for out of bounds
-    // X
-    if (instance.pos.x < 0)
-        instance.pos.x += bounds.x;
-    else if (instance.pos.x > bounds.x)
-        instance.pos.x -= bounds.x;
-    // Y
-    if (instance.pos.y < 0)
-        instance.pos.y += bounds.y;
-    else if(instance.pos.y > bounds.y)
-        instance.pos.y -= bounds.y;
-    // Z
-    if (instance.pos.z < 0)
-        instance.pos.z += bounds.z;
-    if (instance.pos.z > bounds.z)
-        instance.pos.z -= bounds.z;
 
     // Write to output buffer
     instancesOut[id] = instance;

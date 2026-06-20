@@ -23,7 +23,7 @@ std::vector<std::shared_ptr<Render::Renderable>> get_scene() {
     auto floor_roof_mesh = Render::Mesh::generate_square_2sides(scene_width, scene_length);
     auto floor = std::make_shared<Render::MeshInstance>(floor_roof_mesh);
     floor->material = floor_mat;
-    floor->move_to(glm::vec3(0.0, -scene_height / 2, 0.0));
+    floor->move_to(glm::vec3(0.0, -scene_height * 0.7f, 0.0));
     floor->rotate(glm::radians(90.0), glm::vec3(1.0, 0.0, 0.0));
     renderables.push_back(floor);
 
