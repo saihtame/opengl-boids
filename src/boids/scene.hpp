@@ -1,17 +1,25 @@
 #pragma once
-#include "render/renderable.hpp"
+#include "boids/boids_sim.hpp"
+#include "render/mesh_instance.hpp"
 #include <glm/ext/vector_float3.hpp>
 #include <memory>
-#include <vector>
 
 
 namespace ParticleSim::Boids {
 
-std::vector<std::shared_ptr<Render::Renderable>> get_scene();
+class Scene : public Render::Renderable {
+public:
+    Scene(const std::shared_ptr<BoidsParams>& params);
 
-constexpr float scene_width = 256;
-constexpr float scene_length = 256;
-constexpr float scene_height = 128;
-constexpr glm::vec3 scene_offset = glm::vec3(0.0, 0.0, -scene_length);
+    virtual void update(float delta);
+    virtual void render(const glm::mat4& view, const glm::mat4& projection) const;
+    virtual Render::BlendMode get_blend_mode() const { return Render::BlendMode::BLEND_MODE_OPAQUE; };
+    void reset_scene();
+
+private:
+    std::shared_ptr<BoidsParams> params;
+    std::unique_ptr<Render::MeshInstance> floor;
+    std::unique_ptr<BoidsSim> sim;
+};
 
 }

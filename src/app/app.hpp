@@ -1,7 +1,7 @@
 #pragma once
 #include "app/ui.hpp"
+#include "boids/scene.hpp"
 #include "core/camera.hpp"
-#include "core/object_3d.hpp"
 #include "render/renderable.hpp"
 #include "render/renderer.hpp"
 #include <SDL3/SDL.h>
@@ -35,6 +35,8 @@ private: // Runtime properties
     // Camera
     std::shared_ptr<Core::Camera> cam;
     // Objects
+    std::shared_ptr<Boids::BoidsParams> boidsParams;
+    std::shared_ptr<Boids::Scene> boidsScene;
     std::vector<std::shared_ptr<Core::Object3D>> objects;
     std::unique_ptr<Render::Renderer> renderer;
     std::unique_ptr<UI> ui;

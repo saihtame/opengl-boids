@@ -1,5 +1,6 @@
 #include "app/app.hpp"
 #include "app/timer.hpp"
+#include "boids/boids_params.hpp"
 #include "boids/scene.hpp"
 #include "render/renderable.hpp"
 #include "render/renderer.hpp"
@@ -57,10 +58,10 @@ App::App() {
 
     window_resized(window_width, window_height);
 
-    // Get boid scene
-    auto boid_scene_renderables = ParticleSim::Boids::get_scene();
-    for (auto& ren : boid_scene_renderables)
-        add_renderable(ren);
+    // create boid scene
+    boidsParams = std::make_shared<Boids::BoidsParams>();
+    boidsScene = std::make_shared<Boids::Scene>(boidsParams);
+    add_renderable(boidsScene);
 
     // Create UI
     ui = std::make_unique<UI>();
