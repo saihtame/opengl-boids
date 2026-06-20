@@ -7,12 +7,13 @@
 
 namespace ParticleSim::Boids {
 
-BoidsSim::BoidsSim(const std::shared_ptr<Render::Mesh::Mesh>& mesh, const BoidsParams& parameters) : params(parameters) {
+BoidsSim::BoidsSim(const std::shared_ptr<Render::Mesh::Mesh>& mesh, const std::shared_ptr<BoidsParams>& parameters) : params(parameters) {
     update_model_trans();
     material = std::make_unique<BoidsMaterial>(params);
     if (mesh != nullptr)
         data = std::make_unique<BoidsData>(mesh, params);
     compute = std::make_unique<BoidsCompute>(params);
+    boids_initialized = params->boids;
 }
 
 void BoidsSim::update(float delta) {
@@ -34,7 +35,7 @@ void BoidsSim::render(const glm::mat4& view, const glm::mat4& projection) const 
     // Bind VAO
     glBindVertexArray(data->VAO);
     // Render
-    glDrawElementsInstanced(GL_TRIANGLES, data->indices_size, GL_UNSIGNED_INT, 0, params.boids);
+    glDrawElementsInstanced(GL_TRIANGLES, data->indices_size, GL_UNSIGNED_INT, 0, boids_initialized);
 }
 
 Render::BlendMode BoidsSim::get_blend_mode() const {

@@ -13,7 +13,7 @@ namespace ParticleSim::Boids {
 
 class BoidsSim: public Render::Renderable {
 public:
-    BoidsSim(const std::shared_ptr<Render::Mesh::Mesh>& mesh, const BoidsParams& params);
+    BoidsSim(const std::shared_ptr<Render::Mesh::Mesh>& mesh, const std::shared_ptr<BoidsParams>& params);
     ~BoidsSim() = default;
 
     void update(float delta);
@@ -22,10 +22,11 @@ public:
     void set_mesh();
 
 private:
+    int boids_initialized = 0;
     std::unique_ptr<BoidsMaterial> material;
     std::unique_ptr<BoidsData> data;
     std::unique_ptr<BoidsCompute> compute;
-    const BoidsParams params;
+    std::shared_ptr<BoidsParams> params;
 };
 
 }

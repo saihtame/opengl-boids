@@ -30,8 +30,8 @@ std::vector<std::shared_ptr<Render::Renderable>> get_scene() {
     /*---- Boids ----*/
     auto boid_mesh = Render::Mesh::generate_cone(0.2f, 1.0f, 2);
     auto bounds = glm::vec3(scene_width, scene_height, scene_length);
-    BoidsParams params;
-    params.bounds = bounds;
+    auto params = std::make_shared<BoidsParams>();
+    params->bounds = bounds;
     auto boids_sim = std::make_shared<BoidsSim>(boid_mesh, params);
     boids_sim->move_to(-bounds / 2.0f);
     renderables.push_back(boids_sim);

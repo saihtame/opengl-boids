@@ -6,8 +6,12 @@
 namespace ParticleSim::Boids {
 
 struct BoidsParams {
-    int boids = 30000;
+    // Boids Sim initialization parameters
+    // Requires a simulation restart to take effect
     glm::vec3 bounds = glm::vec3(128.0f, 64.0f, 128.0f);
+    int boids = 30000;
+    // Boids Sim runtime parameters
+    // Can be modified while running the sim
     float boid_max_speed = 20.0f;
     float boid_min_speed = 10.0f;
     float view_range = 20.0f;
@@ -19,7 +23,11 @@ struct BoidsParams {
     float cohesionFactor = 0.1f;
 
     void set_view_cosine(float degrees) {
-        view_cosine = glm::cos(glm::radians(degrees));
+        view_cosine = glm::cos(glm::radians(double(degrees / 2)));
+    }
+
+    float get_view_degrees() {
+        return glm::degrees(glm::acos(view_cosine)) * 2;
     }
 };
 

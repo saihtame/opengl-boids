@@ -1,5 +1,6 @@
 #pragma once
 #include "boids/boids_data.hpp"
+#include <memory>
 #include <string>
 
 
@@ -7,13 +8,13 @@ namespace ParticleSim::Boids {
 
 class BoidsCompute {
 public:
-    BoidsCompute(const BoidsParams& params);
+    BoidsCompute(const std::shared_ptr<BoidsParams>& params);
     ~BoidsCompute();
 
     void compute(float delta, BoidsData& data);
 
 private: // Runtime variables
-    const BoidsParams& params;
+    std::shared_ptr<BoidsParams> params;
     unsigned int program_id = 0;
     std::unordered_map<std::string, unsigned int> uniform_locations;
 

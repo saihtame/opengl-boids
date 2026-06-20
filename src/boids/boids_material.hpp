@@ -10,7 +10,7 @@ namespace ParticleSim::Boids {
 
 class BoidsMaterial : public Render::Material::Material {
 public:
-    BoidsMaterial(const BoidsParams& parameters);
+    BoidsMaterial(const std::shared_ptr<BoidsParams>& parameters);
     ~BoidsMaterial() = default;
 
     virtual void use(const glm::mat4& transform, const glm::mat4& view, const glm::mat4& projection) const;
@@ -21,6 +21,6 @@ private:
 private:
     const std::string fragment_shader_path = "shaders/render/boids.frag";
     const std::string vertex_shader_path = "shaders/render/boids.vert";
-    const BoidsParams& params;
+    std::shared_ptr<BoidsParams> params;
 };
 }

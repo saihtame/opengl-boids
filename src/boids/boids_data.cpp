@@ -3,27 +3,28 @@
 #include <glm/ext/vector_float3.hpp>
 #include <glm/geometric.hpp>
 #include <glm/gtc/random.hpp>
+#include <memory>
 
 
 namespace ParticleSim::Boids {
 
-BoidsData::BoidsData(const std::shared_ptr<Render::Mesh::Mesh>& mesh, const BoidsParams& parameters)
+BoidsData::BoidsData(const std::shared_ptr<Render::Mesh::Mesh>& mesh, const std::shared_ptr<BoidsParams>& parameters)
     : Render::Mesh::MeshRenderData(mesh), params(parameters) {
     // Prepare instances data
     std::vector<float> data;
-    data.resize(params.boids * 8);
-    for (int i = 0; i < params.boids; i++) {
+    data.resize(params->boids * 8);
+    for (int i = 0; i < params->boids; i++) {
         // Position data
-        data[i * 8]     = glm::linearRand(1.0f, params.bounds.x - 1.0f);
-        data[i * 8 + 1] = glm::linearRand(1.0f, params.bounds.y - 1.0f);
-        data[i * 8 + 2] = glm::linearRand(1.0f, params.bounds.z - 1.0f);
+        data[i * 8]     = glm::linearRand(1.0f, params->bounds.x - 1.0f);
+        data[i * 8 + 1] = glm::linearRand(1.0f, params->bounds.y - 1.0f);
+        data[i * 8 + 2] = glm::linearRand(1.0f, params->bounds.z - 1.0f);
         data[i * 8 + 3] = 0.0f; // Padding
         // Velocity data
         glm::vec3 vel = glm::normalize(glm::vec3(
             glm::linearRand(-1.0, 1.0),
             glm::linearRand(-1.0, 1.0),
             glm::linearRand(-1.0, 1.0)
-        )) * glm::linearRand(params.boid_min_speed, params.boid_max_speed);
+        )) * glm::linearRand(params->boid_min_speed, params->boid_max_speed);
         data[i * 8 + 4] = vel.x;
         data[i * 8 + 5] = vel.y;
         data[i * 8 + 6] = vel.z;
