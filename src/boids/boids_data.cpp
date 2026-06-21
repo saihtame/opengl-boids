@@ -11,7 +11,7 @@ namespace ParticleSim::Boids {
 
 BoidsData::BoidsData(const std::shared_ptr<Render::Mesh::Mesh>& mesh, const std::shared_ptr<BoidsParams>& params)
     : Render::Mesh::MeshRenderData(mesh) {
-    // Prepare instances data
+    // Prepare initial instances data
     std::vector<float> data;
     data.resize(params->boids * instance_size);
     for (int i = 0; i < params->boids; i++) {
@@ -52,25 +52,36 @@ BoidsData::BoidsData(const std::shared_ptr<Render::Mesh::Mesh>& mesh, const std:
     // Reserve space in buffer B, without copying data to it
     glBindBuffer(GL_ARRAY_BUFFER, instances_BO_B);
     glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(float), NULL, GL_DYNAMIC_COPY);
-
     // Set vao attributes
     set_attributes();
 
-    // Create spatial grid cells buffer
+    // Calculate size of spatial grid buffers
     glm::ivec3 grid_size = glm::ivec3(
-        params->bounds.x / params->view_range + 1,
-        params->bounds.y / params->view_range + 1,
-        params->bounds.z / params->view_range + 1);
+        glm::ceil(params->bounds.x / params->view_range),
+        glm::ceil(params->bounds.y / params->view_range),
+        glm::ceil(params->bounds.z / params->view_range));
+    int total_cells = grid_size.x + grid_size.y + grid_size.z;
+    int spatial_grid_cells_size = total_cells * grid_cell_size;
+    int spatial_grid_elements_size = total_cells * grid_element_size;
+    // Create spatial grid cells buffer
     glGenBuffers(1, &spatial_grid_cells_BO);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, spatial_grid_cells_BO);
-    //glBufferData(GL_SHADER_STORAGE_BUFFER, );
+    glBufferData(GL_SHADER_STORAGE_BUFFER, spatial_grid_cells_size, NULL, GL_DYNAMIC_COPY);
+    // Create spatial grid elements buffer
+    glGenBuffers(1, &spatial_grid_elements_BO);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, spatial_grid_elements_BO);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, spatial_grid_elements_size, NULL, GL_DYNAMIC_COPY);
 }
 
 BoidsData::~BoidsData() {
     glDeleteBuffers(1, &instances_BO_A);
     glDeleteBuffers(1, &instances_BO_B);
+    glDeleteBuffers(1, &spatial_grid_cells_BO);
+    glDeleteBuffers(1, &spatial_grid_elements_BO);
     instances_BO_A = 0;
     instances_BO_B = 0;
+    spatial_grid_cells_BO = 0;
+    spatial_grid_elements_BO = 0;
 }
 
 void BoidsData::switch_instance_buffers() {

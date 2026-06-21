@@ -10,7 +10,7 @@ namespace ParticleSim::Boids {
 
 BoidsCompute::BoidsCompute(const std::shared_ptr<BoidsParams>& parameters)
     : initialized_boids(parameters->boids), params(parameters) {
-    // Create simulation shader
+    // Create simulation shader program
     Shaders::Shader sim_shader(shader_sim_path, GL_COMPUTE_SHADER);
     sim_shader_prog = std::make_unique<Shaders::ShaderProgram>();
     sim_shader_prog->attach_shader(sim_shader);
@@ -25,12 +25,12 @@ void BoidsCompute::compute(float delta, BoidsData& data) {
     sim_shader_prog->use();
     set_uniforms(delta);
 
-    // Set instances data input uniform
+    // Bind instances data input uniform
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, data.instances_BO_A);
-    // Set instances data output uniform
+    // Bind instances data output uniform
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, data.instances_BO_B);
 
-    // Dispatch shader program
+    // Dispatch shader programs
     int dispatches = (initialized_boids + 31) / 32;
     glDispatchCompute(dispatches, 1, 1);
     glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
