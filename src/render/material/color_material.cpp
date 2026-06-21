@@ -4,9 +4,9 @@
 namespace ParticleSim::Render::Material {
 
 ColorMaterial::ColorMaterial() {
-    Render::Material::Shader vertex_shader(vertex_path, GL_VERTEX_SHADER);
-    Render::Material::Shader fragment_shader(frag_path, GL_FRAGMENT_SHADER);
-    shader_program = std::make_unique<ShaderProgram>();
+    Shaders::Shader vertex_shader(vertex_path, GL_VERTEX_SHADER);
+    Shaders::Shader fragment_shader(frag_path, GL_FRAGMENT_SHADER);
+    shader_program = std::make_unique<Shaders::ShaderProgram>();
     shader_program->attach_shader(vertex_shader);
     shader_program->attach_shader(fragment_shader);
     shader_program->link();

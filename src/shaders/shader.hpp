@@ -3,7 +3,7 @@
 #include <glad/gl.h>
 
 
-namespace ParticleSim::Render::Material {
+namespace ParticleSim::Shaders {
 
 class Shader {
 public:

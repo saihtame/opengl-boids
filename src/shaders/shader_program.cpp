@@ -4,7 +4,7 @@
 #include <iostream>
 
 
-namespace ParticleSim::Render::Material {
+namespace ParticleSim::Shaders {
 
 ShaderProgram::ShaderProgram() {
     program_id = glCreateProgram();

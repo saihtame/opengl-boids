@@ -4,7 +4,7 @@
 #include <unordered_map>
 
 
-namespace ParticleSim::Render::Material {
+namespace ParticleSim::Shaders {
 
 class ShaderProgram {
 public:

@@ -1,5 +1,5 @@
 #pragma once
-#include "material/shader_program.hpp"
+#include "shaders/shader_program.hpp"
 #include "glad/gl.h"
 #include <memory>
 #include <string>
@@ -20,7 +20,7 @@ private:
     const std::string frag_shader_path = "shaders/render/cubemap.frag";
 
 private:
-    std::unique_ptr<Material::ShaderProgram> shader_program;
+    std::unique_ptr<Shaders::ShaderProgram> shader_program;
     unsigned int tex_id = 0;
     unsigned int VAO, VBO;
 

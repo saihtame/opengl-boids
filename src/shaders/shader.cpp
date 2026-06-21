@@ -3,7 +3,7 @@
 #include <fstream>
 
 
-namespace ParticleSim::Render::Material {
+namespace ParticleSim::Shaders {
 
 Shader::Shader(std::string path, GLenum shader_type) {
     // Load shader

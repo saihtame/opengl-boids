@@ -1,6 +1,5 @@
 #include "boids_sim.hpp"
 #include "boids/boids_params.hpp"
-#include "render/material/shader.hpp"
 #include <glm/ext/vector_float3.hpp>
 #include <memory>
 

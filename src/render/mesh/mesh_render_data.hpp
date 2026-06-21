@@ -5,7 +5,8 @@
 
 namespace ParticleSim::Render::Mesh {
 
-struct MeshRenderData {
+class MeshRenderData {
+public:
     MeshRenderData(const std::shared_ptr<Mesh>& mesh);
     ~MeshRenderData();
 

@@ -1,6 +1,6 @@
 #include "boids_compute.hpp"
+#include <glad/gl.h>
 #include "boids/boids_params.hpp"
-#include "render/material/shader.hpp"
 #include <glm/ext/vector_float3.hpp>
 #include <iostream>
 #include <fstream>
@@ -9,9 +9,9 @@
 namespace ParticleSim::Boids {
 
 BoidsCompute::BoidsCompute(const std::shared_ptr<BoidsParams>& parameters)
-    : params(parameters), initialized_boids(parameters->boids) {
+    : initialized_boids(parameters->boids), params(parameters) {
     // Load shader file
-    auto shader_str = read_file(shader_path);
+    auto shader_str = read_file(shader_sim_path);
     const char* shader_src = shader_str.c_str();
 
     // Create and compile gl shader
@@ -36,6 +36,46 @@ void BoidsCompute::compute(float delta, BoidsData& data) {
     // Bind shader program
     glUseProgram(program_id);
 
+    set_uniforms(delta);
+
+    // Set instances data input uniform
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, data.instances_BO_A);
+    // Set instances data output uniform
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, data.instances_BO_B);
+
+    // Dispatch shader program
+    int dispatches = (initialized_boids + 31) / 32;
+    glDispatchCompute(dispatches, 1, 1);
+    glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
+
+    // Switch instance data buffers
+    data.switch_instance_buffers();
+}
+
+std::string BoidsCompute::read_file(const std::string& path) {
+    std::ifstream shader_file(path, std::ios::in | std::ios::binary);
+    if (!shader_file.is_open()) {
+        std::cerr << "Failed to open shader file: " << path << std::endl;
+        return {};
+    }
+
+    return std::string(
+        std::istreambuf_iterator<char>(shader_file),
+        std::istreambuf_iterator<char>()
+    );
+}
+
+int BoidsCompute::get_uniform_location(std::string uniform_name) {
+    auto it = uniform_locations.find(uniform_name);
+    if (it != uniform_locations.end())
+        return it->second;
+
+    unsigned int loc = glGetUniformLocation(program_id, uniform_name.c_str());
+    uniform_locations[uniform_name] = loc;
+    return loc;
+}
+
+void BoidsCompute::set_uniforms(float delta) {
     // Set boids uniform
     auto loc = get_uniform_location("boidCount");
     glUniform1i(loc, initialized_boids);
@@ -73,41 +113,6 @@ void BoidsCompute::compute(float delta, BoidsData& data) {
     loc = get_uniform_location("delta");
     glUniform1f(loc, delta);
 
-    // Set instances data input uniform
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, data.instances_BO_A);
-    // Set instances data output uniform
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, data.instances_BO_B);
-
-    // Dispatch shader program
-    int dispatches = (initialized_boids + 31) / 32;
-    glDispatchCompute(dispatches, 1, 1);
-    glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
-
-    // Switch instance data buffers
-    data.switch_instance_buffers();
-}
-
-std::string BoidsCompute::read_file(const std::string& path) {
-    std::ifstream shader_file(path, std::ios::in | std::ios::binary);
-    if (!shader_file.is_open()) {
-        std::cerr << "Failed to open shader file: " << path << std::endl;
-        return {};
-    }
-
-    return std::string(
-        std::istreambuf_iterator<char>(shader_file),
-        std::istreambuf_iterator<char>()
-    );
-}
-
-int BoidsCompute::get_uniform_location(std::string uniform_name) {
-    auto it = uniform_locations.find(uniform_name);
-    if (it != uniform_locations.end())
-        return it->second;
-
-    unsigned int loc = glGetUniformLocation(program_id, uniform_name.c_str());
-    uniform_locations[uniform_name] = loc;
-    return loc;
 }
 
 }

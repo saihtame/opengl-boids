@@ -1,6 +1,7 @@
 add_executable(particle_sim main.cpp)
 
 add_subdirectory(core)
+add_subdirectory(shaders)
 add_subdirectory(render)
 add_subdirectory(boids)
 add_subdirectory(app)

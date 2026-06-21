@@ -5,9 +5,9 @@
 namespace ParticleSim::Boids {
 
 BoidsMaterial::BoidsMaterial(const std::shared_ptr<BoidsParams>& params) : params(params) {
-    Render::Material::Shader vertex_shader(vertex_shader_path, GL_VERTEX_SHADER);
-    Render::Material::Shader fragment_shader(fragment_shader_path, GL_FRAGMENT_SHADER);
-    shader_program = std::make_unique<Render::Material::ShaderProgram>();
+    Shaders::Shader vertex_shader(vertex_shader_path, GL_VERTEX_SHADER);
+    Shaders::Shader fragment_shader(fragment_shader_path, GL_FRAGMENT_SHADER);
+    shader_program = std::make_unique<Shaders::ShaderProgram>();
     shader_program->attach_shader(vertex_shader);
     shader_program->attach_shader(fragment_shader);
     shader_program->link();

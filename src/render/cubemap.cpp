@@ -1,7 +1,6 @@
+#include "cubemap.hpp"
 #include <iostream>
 #include <string>
-#include "cubemap.hpp"
-#include "material/shader.hpp"
 #include <stb_image.h>
 #include <memory>
 
@@ -82,10 +81,10 @@ void CubeMap::initialize(std::string px, std::string nx, std::string py, std::st
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);  
     // Load shaders
-    Material::Shader vertex_shader(vertex_shader_path, GL_VERTEX_SHADER);
-    Material::Shader frag_shader(frag_shader_path, GL_FRAGMENT_SHADER);
+    Shaders::Shader vertex_shader(vertex_shader_path, GL_VERTEX_SHADER);
+    Shaders::Shader frag_shader(frag_shader_path, GL_FRAGMENT_SHADER);
     // Link to program
-    shader_program = std::make_unique<Material::ShaderProgram>();
+    shader_program = std::make_unique<Shaders::ShaderProgram>();
     shader_program->attach_shader(vertex_shader);
     shader_program->attach_shader(frag_shader);
     shader_program->link();

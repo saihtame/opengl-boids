@@ -1,5 +1,5 @@
 #include "texture.hpp"
-#include "shader.hpp"
+#include "shaders/shader.hpp"
 #include <iostream>
 #include <stb_image.h>
 
