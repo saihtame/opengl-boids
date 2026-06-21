@@ -1,41 +1,28 @@
 #include "boids_compute.hpp"
+#include "shaders/shader.hpp"
+#include "shaders/shader_program.hpp"
 #include <glad/gl.h>
-#include "boids/boids_params.hpp"
 #include <glm/ext/vector_float3.hpp>
-#include <iostream>
-#include <fstream>
+#include <memory>
 
 
 namespace ParticleSim::Boids {
 
 BoidsCompute::BoidsCompute(const std::shared_ptr<BoidsParams>& parameters)
     : initialized_boids(parameters->boids), params(parameters) {
-    // Load shader file
-    auto shader_str = read_file(shader_sim_path);
-    const char* shader_src = shader_str.c_str();
-
-    // Create and compile gl shader
-    unsigned int shader_id = glCreateShader(GL_COMPUTE_SHADER);
-    glShaderSource(shader_id, 1, &shader_src, NULL);
-    glCompileShader(shader_id);
-
-    // Create shader program
-    program_id = glCreateProgram();
-    glAttachShader(program_id, shader_id);
-    glLinkProgram(program_id);
-
-    // Delete shader
-    glDeleteShader(shader_id);
+    // Create simulation shader
+    Shaders::Shader sim_shader(shader_sim_path, GL_COMPUTE_SHADER);
+    sim_shader_prog = std::make_unique<Shaders::ShaderProgram>();
+    sim_shader_prog->attach_shader(sim_shader);
+    sim_shader_prog->link();
 }
 
 BoidsCompute::~BoidsCompute() {
-    glDeleteProgram(program_id);
 }
 
 void BoidsCompute::compute(float delta, BoidsData& data) {
-    // Bind shader program
-    glUseProgram(program_id);
-
+    // Simulation shader
+    sim_shader_prog->use();
     set_uniforms(delta);
 
     // Set instances data input uniform
@@ -52,67 +39,19 @@ void BoidsCompute::compute(float delta, BoidsData& data) {
     data.switch_instance_buffers();
 }
 
-std::string BoidsCompute::read_file(const std::string& path) {
-    std::ifstream shader_file(path, std::ios::in | std::ios::binary);
-    if (!shader_file.is_open()) {
-        std::cerr << "Failed to open shader file: " << path << std::endl;
-        return {};
-    }
-
-    return std::string(
-        std::istreambuf_iterator<char>(shader_file),
-        std::istreambuf_iterator<char>()
-    );
-}
-
-int BoidsCompute::get_uniform_location(std::string uniform_name) {
-    auto it = uniform_locations.find(uniform_name);
-    if (it != uniform_locations.end())
-        return it->second;
-
-    unsigned int loc = glGetUniformLocation(program_id, uniform_name.c_str());
-    uniform_locations[uniform_name] = loc;
-    return loc;
-}
-
 void BoidsCompute::set_uniforms(float delta) {
-    // Set boids uniform
-    auto loc = get_uniform_location("boidCount");
-    glUniform1i(loc, initialized_boids);
-    // Set bounds uniform
-    loc = get_uniform_location("bounds");
-    glUniform3f(loc, params->bounds.x, params->bounds.y, params->bounds.z);
-    // Set boid max speed uniform
-    loc = get_uniform_location("boidMaxSpeed");
-    glUniform1f(loc, params->boid_max_speed);
-    // Set boid min speed uniform
-    loc = get_uniform_location("boidMinSpeed");
-    glUniform1f(loc, params->boid_min_speed);
-    // Set view range uniform
-    loc = get_uniform_location("viewRange");
-    glUniform1f(loc, params->view_range);
-    // Set view cosine uniform
-    loc = get_uniform_location("viewCosine");
-    glUniform1f(loc, params->view_cosine);
-    // Set collision avoidance strength uniform
-    loc = get_uniform_location("collisionAvoidanceStrength");
-    glUniform1f(loc, params->collision_avoidance_strength);
-    // Set acceleration uniform
-    loc = get_uniform_location("acceleration");
-    glUniform1f(loc, params->acceleration);
-    // Set seperation factor uniform
-    loc = get_uniform_location("seperationFactor");
-    glUniform1f(loc, params->seperation_factor);
-    // Set alignment factor uniform
-    loc = get_uniform_location("alignmentFactor");
-    glUniform1f(loc, params->alignment_factor);
-    // Set cohesion factor uniform
-    loc = get_uniform_location("cohesionFactor");
-    glUniform1f(loc, params->cohesion_factor);
-    // Set delta uniform
-    loc = get_uniform_location("delta");
-    glUniform1f(loc, delta);
-
+    sim_shader_prog->set_uniform_int("boidCount", initialized_boids);
+    sim_shader_prog->set_uniform_vec3("bounds", params->bounds);
+    sim_shader_prog->set_uniform_float("boidMaxSpeed", params->boid_max_speed);
+    sim_shader_prog->set_uniform_float("boidMinSpeed", params->boid_min_speed);
+    sim_shader_prog->set_uniform_float("viewRange", params->view_range);
+    sim_shader_prog->set_uniform_float("viewCosine", params->view_cosine);
+    sim_shader_prog->set_uniform_float("collisionAvoidanceStrength", params->collision_avoidance_strength);
+    sim_shader_prog->set_uniform_float("acceleration", params->acceleration);
+    sim_shader_prog->set_uniform_float("seperationFactor", params->seperation_factor);
+    sim_shader_prog->set_uniform_float("alignmentFactor", params->alignment_factor);
+    sim_shader_prog->set_uniform_float("cohesionFactor", params->cohesion_factor);
+    sim_shader_prog->set_uniform_float("delta", delta);
 }
 
 }

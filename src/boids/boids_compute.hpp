@@ -1,5 +1,6 @@
 #pragma once
 #include "boids/boids_data.hpp"
+#include "shaders/shader_program.hpp"
 #include <memory>
 #include <string>
 
@@ -16,8 +17,7 @@ public:
 private: // Runtime variables
     const int initialized_boids;
     const std::shared_ptr<BoidsParams> params;
-    unsigned int program_id = 0;
-    std::unordered_map<std::string, unsigned int> uniform_locations;
+    std::unique_ptr<Shaders::ShaderProgram> sim_shader_prog;
 
 private: // Constants
     static constexpr int work_group_size = 32;
@@ -26,8 +26,6 @@ private: // Constants
     const std::string shader_sim_path = "shaders/compute/boids_sim.comp";
 
 private:
-    std::string read_file(const std::string& path);
-    int get_uniform_location(std::string uniform_name);
     void set_uniforms(float delta);
 };
 
