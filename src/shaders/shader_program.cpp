@@ -59,9 +59,19 @@ void ShaderProgram::set_uniform_vec3(std::string uniform_name, glm::vec3 value) 
     glUniform3f(loc, value.x, value.y, value.z);
 }
 
+void ShaderProgram::set_uniform_ivec3(std::string uniform_name, glm::ivec3 value) {
+    unsigned int loc = get_uniform_location(uniform_name);
+    glUniform3i(loc, value.x, value.y, value.z);
+}
+
 void ShaderProgram::set_uniform_int(std::string uniform_name, int value) {
     unsigned int loc = get_uniform_location(uniform_name);
     glUniform1i(loc, value);
+}
+
+void ShaderProgram::set_uniform_uint(std::string uniform_name, unsigned int value) {
+    unsigned int loc = get_uniform_location(uniform_name);
+    glUniform1ui(loc, value);
 }
 
 void ShaderProgram::set_uniform_float(std::string uniform_name, float value) {

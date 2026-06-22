@@ -60,6 +60,7 @@ void UI::render() {
     ImGui::SliderFloat("Bounds Width", &boidsParams->bounds.x, 32.0f, 1024.0f);
     ImGui::SliderFloat("Bounds Length", &boidsParams->bounds.z, 32.0f, 1024.0f);
     ImGui::SliderFloat("Bounds Height", &boidsParams->bounds.y, 32.0f, 1024.0f);
+    ImGui::SliderFloat("View Range", &boidsParams->view_range, 1.0f, 128.0f);
     if (ImGui::Button("Restart Simulation")) {
         boidsParams->should_restart = true;
     }
@@ -68,7 +69,6 @@ void UI::render() {
     ImGui::Text("Runtime Parameters");
     ImGui::SliderFloat("Max Speed", &boidsParams->boid_max_speed, boidsParams->boid_min_speed, 64.0f);
     ImGui::SliderFloat("Min Speed", &boidsParams->boid_min_speed, 0.1f, boidsParams->boid_max_speed);
-    ImGui::SliderFloat("View Range", &boidsParams->view_range, 1.0f, 128.0f);
     float view_degrees = boidsParams->get_view_degrees();
     if (ImGui::SliderFloat("View Angle", &view_degrees, 1.0f, 360.0f)) {
         boidsParams->set_view_cosine(view_degrees);

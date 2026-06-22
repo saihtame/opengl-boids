@@ -25,8 +25,8 @@ private:
     int boids_initialized = 0;
     std::unique_ptr<BoidsMaterial> material;
     std::unique_ptr<BoidsData> data;
-    std::unique_ptr<BoidsCompute> compute;
     std::shared_ptr<BoidsParams> params;
+    std::unique_ptr<BoidsCompute> compute;
 };
 
 }
