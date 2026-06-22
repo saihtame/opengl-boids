@@ -11,16 +11,22 @@ namespace ParticleSim::Boids {
 BoidsCompute::BoidsCompute(const std::shared_ptr<BoidsParams>& parameters)
     : initialized_boids(parameters->boids), params(parameters) {
     // Create spatial cell key shader program
-    Shaders::Shader cell_key_shader(shader_cell_key_path, GL_COMPUTE_SHADER);
-    cell_key_shader_prog = std::make_unique<Shaders::ShaderProgram>();
-    cell_key_shader_prog->attach_shader(cell_key_shader);
-    cell_key_shader_prog->link();
+    Shaders::Shader cell_key_shader(spatial_key_shader_path, GL_COMPUTE_SHADER);
+    spatial_key_shader_prog = std::make_unique<Shaders::ShaderProgram>();
+    spatial_key_shader_prog->attach_shader(cell_key_shader);
+    spatial_key_shader_prog->link();
+
+    // Create spatial cell key shader program
+    Shaders::Shader cell_hist_shader(spatial_hist_shader_path, GL_COMPUTE_SHADER);
+    spatial_hist_shader_prog = std::make_unique<Shaders::ShaderProgram>();
+    spatial_hist_shader_prog->attach_shader(cell_key_shader);
+    spatial_hist_shader_prog->link();
 
     // Create spatial grid sort shader program
-    Shaders::Shader grid_sort_shader(shader_grid_sort_path, GL_COMPUTE_SHADER);
-    grid_sort_shader_prog = std::make_unique<Shaders::ShaderProgram>();
-    grid_sort_shader_prog->attach_shader(grid_sort_shader);
-    grid_sort_shader_prog->link();
+    Shaders::Shader grid_sort_shader(spatial_radix_shader_path, GL_COMPUTE_SHADER);
+    spatial_sort_shader_prog = std::make_unique<Shaders::ShaderProgram>();
+    spatial_sort_shader_prog->attach_shader(grid_sort_shader);
+    spatial_sort_shader_prog->link();
 
     // Create simulation shader program
     Shaders::Shader sim_shader(shader_sim_path, GL_COMPUTE_SHADER);
@@ -31,7 +37,8 @@ BoidsCompute::BoidsCompute(const std::shared_ptr<BoidsParams>& parameters)
 
 void BoidsCompute::compute(float delta, BoidsData& data) {
     // Run compute shaders
-    cell_grid_key_shader(data);
+    run_grid_key_shader(data);
+    run_grid_hist_shader(data);
     //run_grid_sort_shader(data);
     run_sim_shader(delta, data);
 
@@ -39,25 +46,39 @@ void BoidsCompute::compute(float delta, BoidsData& data) {
     data.switch_instance_buffers();
 }
 
-inline void BoidsCompute::cell_grid_key_shader(const BoidsData& data) {
+inline void BoidsCompute::run_grid_key_shader(const BoidsData& data) {
     // Prepare cell key shader program
-    cell_key_shader_prog->use();
-    cell_key_shader_prog->set_uniform_uint("boidCount", params->boids);
-    cell_key_shader_prog->set_uniform_vec3("bounds", params->bounds);
-    cell_key_shader_prog->set_uniform_float("cellSize", params->view_range);
-    cell_key_shader_prog->set_uniform_ivec3("gridSize", data.spatial_grid_size);
+    spatial_key_shader_prog->use();
+    spatial_key_shader_prog->set_uniform_uint("boidCount", params->boids);
+    spatial_key_shader_prog->set_uniform_vec3("bounds", params->bounds);
+    spatial_key_shader_prog->set_uniform_float("cellSize", params->view_range);
+    spatial_key_shader_prog->set_uniform_ivec3("gridSize", data.spatial_grid_size);
 
     // Bind instances data input uniform
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, data.instances_BO_A);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, data.spatial_grid_entries_A);
 
-    // Dispatch shader programs
+    // Dispatch shader program
     int dispatches = (initialized_boids + work_group_size - 1) / work_group_size;
     glDispatchCompute(dispatches, 1, 1);
     glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
 }
 
-inline void BoidsCompute::run_grid_sort_shader(const BoidsData& data) {
+inline void BoidsCompute::run_grid_hist_shader(const BoidsData& data) {
+    spatial_hist_shader_prog->use();
+    spatial_hist_shader_prog->set_uniform_uint("boidCount", params->boids);
+
+    // Bind entries and histogram buffers
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, data.spatial_grid_entries_A);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, data.spatial_grid_hist_BO);
+
+    // Dispatch shader program
+    int dispatches = (initialized_boids + work_group_size - 1) / work_group_size;
+    glDispatchCompute(dispatches, 1, 1);
+    glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
+}
+
+inline void BoidsCompute::run_grid_sort_shader(const BoidsData& ) {
 
 }
 

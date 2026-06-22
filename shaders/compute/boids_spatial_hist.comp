@@ -1,0 +1,86 @@
+#version 460 core
+layout (local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
+
+/*---- Constansts ----*/
+// The amount of bits each pass has to sort
+const uint bits = 4u;     // 4 bits
+const uint bitMask = 0xf; // mask of the first 4 bits
+// The amount of passes the redix sort has do to
+const uint passes = 64u / bits;
+// The amount of bits each pass has to sort
+const uint bucketsPerPass = 1u << bits; // 2 to the power of bits
+
+/*---- Structs ----*/
+struct GridCell {
+    uint offsetStart;
+    uint offsetEnd;
+};
+
+struct Entry {
+    uvec2 key;
+    uint value;
+};
+
+struct Histogram {
+    uint buckets[bucketsPerPass];
+};
+
+/*---- Uniforms ----*/
+layout (location = 0) uniform uint boidCount;
+
+/*---- Buffers ----*/
+layout(std430, binding = 1) buffer EntriesSrc {
+    Entry entriesSrc[];
+};
+
+layout(std430, binding = 2) buffer Histograms {
+    Histogram histograms[];
+};
+
+/*---- Main ----*/
+shared Histogram localHists[passes];
+
+void main() {
+    // Zero local hists
+    if (gl_LocalInvocationID.x == 0) {
+        for (uint p = 0; p < passes; p++) {
+            for (uint b = 0; b < bucketsPerPass; b++) {
+                localHists[p].buckets[b] = 0;
+            }
+        }
+    }
+    barrier();
+
+    uint id = gl_GlobalInvocationID.x;
+    if (id >= boidCount) return;
+
+    uvec2 v = entriesSrc[id].key;
+
+    // Add to local histogram value for each pass
+    // First 32 bits
+    for (uint px = 0u; px < (passes / 2u); px++) {
+        uint shift = px * bits;
+        // Determine bucket of value
+        uint b = (v.x >> shift) & bitMask;
+        // Add 1 to bucket count
+        atomicAdd(localHists[px].buckets[b], 1);
+    }
+    // Last 32 bits
+    for (uint py = 0u; py < passes / 2u; py++) {
+        // Determine bucket of value
+        uint shift = py * bits;
+        uint b = (v.y >> shift) & bitMask;
+        // Add 1 to bucket count
+        atomicAdd(localHists[py + passes / 2u].buckets[b], 1);
+    }
+
+    // Flush local histogram to global histogram
+    barrier();
+    if (gl_LocalInvocationID.x == 0) {
+        for (int p = 0; p < passes; p++) {
+            for (int b = 0; b < bucketsPerPass; b++) {
+                atomicAdd(histograms[p].buckets[b], localHists[p].buckets[b]);
+            }
+        }
+    }
+}

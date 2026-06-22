@@ -17,20 +17,22 @@ public:
 private: // Runtime variables
     const unsigned int initialized_boids;
     const std::shared_ptr<BoidsParams> params;
-    std::unique_ptr<Shaders::ShaderProgram> cell_key_shader_prog;
-    std::unique_ptr<Shaders::ShaderProgram> grid_sort_shader_prog;
+    std::unique_ptr<Shaders::ShaderProgram> spatial_key_shader_prog;
+    std::unique_ptr<Shaders::ShaderProgram> spatial_hist_shader_prog;
+    std::unique_ptr<Shaders::ShaderProgram> spatial_sort_shader_prog;
     std::unique_ptr<Shaders::ShaderProgram> sim_shader_prog;
 
 private: // Constants
     static constexpr int work_group_size = 32; // Work group x size defined in shaders
-    static constexpr int radix_passes = 16;    // 64 bit key, 4 bits per pass, gives 16 radix passes
     // Paths to shaders files
-    const std::string shader_cell_key_path = "shaders/compute/boids_cell_key.comp";
-    const std::string shader_grid_sort_path = "shaders/compute/boids_grid_sort.comp";
+    const std::string spatial_key_shader_path = "shaders/compute/boids_spatial_key.comp";
+    const std::string spatial_hist_shader_path = "shaders/compute/boids_spatial_hist.comp";
+    const std::string spatial_radix_shader_path = "shaders/compute/boids_spatial_radix.comp";
     const std::string shader_sim_path = "shaders/compute/boids_sim.comp";
 
 private:
-    inline void cell_grid_key_shader(const BoidsData& data);
+    inline void run_grid_key_shader(const BoidsData& data);
+    inline void run_grid_hist_shader(const BoidsData& data);
     inline void run_grid_sort_shader(const BoidsData& data);
     inline void run_sim_shader(float delta, const BoidsData& data);
 };

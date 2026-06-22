@@ -1,0 +1,54 @@
+#version 460 core
+layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+/*---- Constansts ----*/
+// The amount of bits each pass has to sort
+const uint bits = 4;
+// The amount of passes the redix sort has do to
+const uint passes = 64 / bits;
+// The amount of bits each pass has to sort
+const uint bucketsPerPass = 1u << bits; // 2 to the power of bits
+
+/*---- Structs ----*/
+struct GridCell {
+    uint offsetStart;
+    uint offsetEnd;
+};
+
+struct Entry {
+    uvec2 key;
+    uint value;
+};
+
+struct Histogram {
+    uint buckets[bucketsPerPass];
+};
+
+/*---- Uniforms ----*/
+layout (location = 0) uniform uint boidCount;
+
+/*---- Buffers ----*/
+layout(std430, binding = 0) buffer SpatialGridCells {
+    GridCell gridCells[];
+};
+
+layout(std430, binding = 1) buffer SpatialGridElements {
+    uint gridElements[];
+};
+
+layout(std430, binding = 2) buffer EntriesSrc {
+    Entry entriesSrc[];
+};
+
+layout(std430, binding = 3) buffer EntriesDst{
+    Entry entriesDst[];
+};
+
+layout(std430, binding = 4) buffer Histograms {
+    uint[] histograms;
+};
+
+/*---- Main ----*/
+void main() {
+    
+}

@@ -24,7 +24,6 @@ layout(std430, binding = 0) buffer InstanceData {
     Instance instances[];
 };
 
-
 layout(std430, binding = 1) buffer Entries {
     Entry entries[];
 };
