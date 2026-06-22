@@ -39,7 +39,7 @@ void BoidsCompute::compute(float delta, BoidsData& data) {
     // Run compute shaders
     run_grid_key_shader(data);
     run_grid_hist_shader(data);
-    //run_grid_sort_shader(data);
+    run_grid_sort_shader(data);
     run_sim_shader(delta, data);
 
     // Switch instance data buffers
@@ -52,7 +52,7 @@ inline void BoidsCompute::run_grid_key_shader(const BoidsData& data) {
     spatial_key_shader_prog->set_uniform_uint("boidCount", params->boids);
     spatial_key_shader_prog->set_uniform_vec3("bounds", params->bounds);
     spatial_key_shader_prog->set_uniform_float("cellSize", params->view_range);
-    spatial_key_shader_prog->set_uniform_ivec3("gridSize", data.spatial_grid_size);
+    spatial_key_shader_prog->set_uniform_uvec3("gridSize", data.spatial_grid_size);
 
     // Bind instances data input uniform
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, data.instances_BO_A);
@@ -78,8 +78,22 @@ inline void BoidsCompute::run_grid_hist_shader(const BoidsData& data) {
     glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
 }
 
-inline void BoidsCompute::run_grid_sort_shader(const BoidsData& ) {
+inline void BoidsCompute::run_grid_sort_shader(BoidsData& data) {
+    spatial_sort_shader_prog->use();
+    spatial_sort_shader_prog->set_uniform_uint("boidCount", params->boids);
 
+    // Bind buffers
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, data.spatial_grid_hist_BO);
+
+    // Dispatch shader in multiple passes
+    for (uint32_t p = 0; p < BoidsData::grid_radix_passes; p++) {
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, data.spatial_grid_entries_A);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, data.spatial_grid_entries_B);
+        spatial_sort_shader_prog->set_uniform_uint("pass", p);
+        glDispatchCompute(1, 1, 1);
+        glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
+        data.switch_entries_buffers();
+    }
 }
 
 inline void BoidsCompute::run_sim_shader(float delta, const BoidsData& data) {
@@ -97,7 +111,7 @@ inline void BoidsCompute::run_sim_shader(float delta, const BoidsData& data) {
     sim_shader_prog->set_uniform_float("alignmentFactor", params->alignment_factor);
     sim_shader_prog->set_uniform_float("cohesionFactor", params->cohesion_factor);
     sim_shader_prog->set_uniform_float("delta", delta);
-    sim_shader_prog->set_uniform_ivec3("gridSize", data.spatial_grid_size);
+    sim_shader_prog->set_uniform_uvec3("gridSize", data.spatial_grid_size);
 
     // Bind instances data input uniform
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, data.instances_BO_A);

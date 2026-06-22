@@ -33,7 +33,7 @@ private: // Constants
 private:
     inline void run_grid_key_shader(const BoidsData& data);
     inline void run_grid_hist_shader(const BoidsData& data);
-    inline void run_grid_sort_shader(const BoidsData& data);
+    inline void run_grid_sort_shader(BoidsData& data);
     inline void run_sim_shader(float delta, const BoidsData& data);
 };
 

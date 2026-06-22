@@ -5,7 +5,7 @@ layout (local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
 struct Instance {
     vec3 pos;
     vec3 vel;
-    ivec3 gridCell;
+    uvec3 gridCell;
 };
 
 struct Entry {
@@ -17,7 +17,7 @@ struct Entry {
 layout (location = 0) uniform uint boidCount;
 layout (location = 1) uniform vec3 bounds;
 layout (location = 2) uniform float cellSize;
-layout (location = 3) uniform ivec3 gridSize;
+layout (location = 3) uniform uvec3 gridSize;
 
 /*---- Buffers ----*/
 layout(std430, binding = 0) buffer InstanceData {
@@ -66,7 +66,7 @@ void main() {
     if (id >= boidCount) return;
 
     // Get instance pos
-    ivec3 pos = instances[id].gridCell;
+    uvec3 pos = instances[id].gridCell;
 
     entries[id].value = id;
     entries[id].key = mortonEncode(pos);

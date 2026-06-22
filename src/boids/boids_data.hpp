@@ -34,6 +34,7 @@ public:
     glm::ivec3 spatial_grid_size;
 
     void switch_instance_buffers();
+    void switch_entries_buffers();
 
 private:
     inline void set_vao_attributes();

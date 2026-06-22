@@ -1,4 +1,5 @@
 #include "boids_data.hpp"
+#include <bit>
 #include <glad/gl.h>
 #include <glm/ext/vector_float3.hpp>
 #include <glm/ext/vector_uint3.hpp>
@@ -36,10 +37,10 @@ BoidsData::BoidsData(const std::shared_ptr<Render::Mesh::Mesh>& mesh, const std:
         data[i * instance_byte_size + 6] = vel.z;
         data[i * instance_byte_size + 7] = 0.0f; // Padding
         // grid cell
-        glm::uvec3 grid_cell = glm::ivec3(pos / params->view_range);
-        data[i * instance_byte_size + 8] = grid_cell.x;
-        data[i * instance_byte_size + 9] = grid_cell.y;
-        data[i * instance_byte_size + 10] = grid_cell.z;
+        glm::uvec3 grid_cell = glm::uvec3(glm::ceil(pos / params->view_range));
+        data[i * instance_byte_size + 8] = std::bit_cast<float>(grid_cell.x);
+        data[i * instance_byte_size + 9] = std::bit_cast<float>(grid_cell.y);
+        data[i * instance_byte_size + 10] = std::bit_cast<float>(grid_cell.z);
         data[i * instance_byte_size + 11] = 0.0f;
     }
 
@@ -112,6 +113,12 @@ void BoidsData::switch_instance_buffers() {
 
     // Reset VAO attributes
     set_vao_attributes();
+}
+
+void BoidsData::switch_entries_buffers() {
+    unsigned int tmp = spatial_grid_entries_A;
+    spatial_grid_entries_A = spatial_grid_entries_B;
+    spatial_grid_entries_B = tmp;
 }
 
 void BoidsData::set_vao_attributes() {

@@ -4,8 +4,7 @@ layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 /*---- Constansts ----*/
 // The amount of bits each pass has to sort
 const uint bits = 4;
-// The amount of passes the redix sort has do to
-const uint passes = 64 / bits;
+const uint bitMask = 0xf; // mask of the first 4 bits
 // The amount of bits each pass has to sort
 const uint bucketsPerPass = 1u << bits; // 2 to the power of bits
 
@@ -26,29 +25,60 @@ struct Histogram {
 
 /*---- Uniforms ----*/
 layout (location = 0) uniform uint boidCount;
+layout (location = 1) uniform uint pass;
 
 /*---- Buffers ----*/
-layout(std430, binding = 0) buffer SpatialGridCells {
-    GridCell gridCells[];
+layout(std430, binding = 0) buffer Histograms {
+    Histogram[] histograms;
 };
 
-layout(std430, binding = 1) buffer SpatialGridElements {
-    uint gridElements[];
-};
-
-layout(std430, binding = 2) buffer EntriesSrc {
+layout(std430, binding = 1) buffer EntriesSrc {
     Entry entriesSrc[];
 };
 
-layout(std430, binding = 3) buffer EntriesDst{
+layout(std430, binding = 2) buffer EntriesDst{
     Entry entriesDst[];
 };
 
-layout(std430, binding = 4) buffer Histograms {
-    uint[] histograms;
-};
+/*---- Helpers ----*/
+Histogram insertedValues;
+
+uint getBucket(uvec2 val) {
+    if (pass < 8) {
+        uint shift = bits * pass;
+        return (val.x >> shift) & bitMask;
+    } else {
+        uint shift = (bits * (pass - 8u));
+        return (val.y >> shift) & bitMask;
+    }
+}
+
+uint getIndex(uint bucket) {
+    uint ind = 0;
+
+    // Sum the count of all the values below and including bucket
+    for (uint i = 0; i < bucket; i++) {
+        ind += histograms[pass].buckets[i];
+    }
+
+    return ind + insertedValues.buckets[bucket];
+}
 
 /*---- Main ----*/
 void main() {
-    
+    // Zero insertedValues histogram
+    for (int i = 0; i < bucketsPerPass; i++) {
+        insertedValues.buckets[i] = 0;
+    }
+
+    for (int i = 0; i < boidCount; i++) {
+        Entry e = entriesSrc[i];
+
+        uint b = getBucket(e.key);
+
+        uint ind = getIndex(b);
+
+        entriesDst[ind] = e;
+        insertedValues.buckets[b] += 1;
+    }
 }

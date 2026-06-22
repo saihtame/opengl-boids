@@ -5,7 +5,7 @@ layout (local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
 struct Instance {
     vec3 pos;
     vec3 vel;
-    ivec3 gridCell;
+    uvec3 gridCell;
 };
 
 /*---- Uniforms ----*/
@@ -21,7 +21,7 @@ layout (location = 8) uniform float seperationFactor;
 layout (location = 9) uniform float alignmentFactor;
 layout (location = 10) uniform float cohesionFactor;
 layout (location = 11) uniform float delta;
-layout (location = 12) uniform ivec3 gridSize;
+layout (location = 12) uniform uvec3 gridSize;
 
 /*---- Buffers ----*/
 layout(std430, binding = 0) buffer InstanceDataIn {
@@ -204,7 +204,7 @@ void main() {
     instance.pos += instance.vel * delta;
 
     // Update gridCell value
-    instance.gridCell = ivec3(
+    instance.gridCell = uvec3(
         clamp(int(floor(instance.pos.x / viewRange)), 0, gridSize.x - 1),
         clamp(int(floor(instance.pos.y / viewRange)), 0, gridSize.y - 1),
         clamp(int(floor(instance.pos.z / viewRange)), 0, gridSize.z - 1)
