@@ -16,8 +16,8 @@ struct BoidsParams {
     float boid_min_speed = 10.0f;
     float view_range = 20.0f;
     float view_cosine = -0.5f; // 90 degree view angle
-    float collision_avoidance_strength = 10.0f;
-    float acceleration = 8.0;
+    float collision_avoidance_strength = 32.0f;
+    float acceleration = 12.0;
     float seperation_factor = 3.0f;
     float alignment_factor = 0.40f;
     float cohesion_factor = 0.1f;

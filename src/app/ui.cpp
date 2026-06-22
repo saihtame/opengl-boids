@@ -74,10 +74,10 @@ void UI::render() {
         boidsParams->set_view_cosine(view_degrees);
     }
     ImGui::SliderFloat("Acceleration", &boidsParams->acceleration, 1.0f, 64.0f);
-    ImGui::SliderFloat("Collision Avoidance Factor", &boidsParams->collision_avoidance_strength, 0.01f, 32.0f);
-    ImGui::SliderFloat("Seperation Factor", &boidsParams->seperation_factor, 0.01f, 32.0f);
-    ImGui::SliderFloat("Alignment Factor", &boidsParams->alignment_factor, 0.01f, 32.0f);
-    ImGui::SliderFloat("Cohesion Factor", &boidsParams->cohesion_factor, 0.01f, 32.0f);
+    ImGui::SliderFloat("Collision Avoidance Factor", &boidsParams->collision_avoidance_strength, 0.0f, 64.0f);
+    ImGui::SliderFloat("Seperation Factor", &boidsParams->seperation_factor, 0.01f, 64.0f);
+    ImGui::SliderFloat("Alignment Factor", &boidsParams->alignment_factor, 0.01f, 64.0f);
+    ImGui::SliderFloat("Cohesion Factor", &boidsParams->cohesion_factor, 0.01f, 64.0f);
 
     // Frame counter
     ImGuiIO& io = ImGui::GetIO();
