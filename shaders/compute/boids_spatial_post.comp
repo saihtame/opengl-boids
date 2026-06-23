@@ -1,0 +1,106 @@
+#version 460 core
+layout (local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
+
+/*---- Structs ----*/
+struct GridCell {
+    uint offsetStart;
+    uint offsetEnd;
+};
+
+struct Entry {
+    uvec2 key;
+    uint value;
+};
+
+/*---- Uniforms ----*/
+layout (location = 0) uniform uint boidCount;
+layout (location = 1) uniform uvec3 gridSize;
+
+/*---- Buffers ----*/
+// Contains sorted key-value pairs for each boid instance
+layout(std430, binding = 0) buffer Entries {
+    Entry entries[];
+};
+
+layout(std430, binding = 1) buffer GridCells {
+    GridCell gridCells[];
+};
+
+layout(std430, binding = 2) buffer GridElements {
+    uint gridElements[];
+};
+
+/*---- Helpers ----*/
+// Used by mortonDecode, for decoding single bits
+uint mortonDecodeBit(uvec2 key, uint bit, uint i, uint j) {
+    if (bit < 32u) {
+        uint shift = i * 2u + j;
+        uint mask = 0x1 << bit;
+        return (key.x & mask) >> shift;
+    } else {
+        int shift = int(i + j - (bit - 32u));
+        uint mask = 0x1 << (bit - 32u);
+        if (shift < 0) {
+            return (key.y & mask) << (-shift);
+        } else {
+            return (key.y & mask) >> (shift);
+        }
+    }
+}
+
+// Decodes a mortonEncoded uvec2 to a uvec3 representing a grid pos
+uvec3 mortonDecode(uvec2 key) {
+    uvec3 res = uvec3(0u);
+    for (uint i = 0; i < 21u; i++) {
+        // X
+        uint xBit = i * 3;
+        res.x += mortonDecodeBit(key, xBit, i, 0);
+        // Y
+        uint yBit = xBit + 1;
+        res.y += mortonDecodeBit(key, yBit, i, 1);
+        // Z
+        uint zBit = yBit + 1u;
+        res.z += mortonDecodeBit(key, zBit, i, 2);
+    }
+
+    return res;
+}
+
+// Returns the index for a gridCell with a given position
+uint getGridIndex(uvec3 pos) {
+    return pos.x + pos.y * gridSize.x + pos.z * gridSize.x * gridSize.y;
+}
+
+/*---- Main ----*/
+void main() {
+    uint id = gl_GlobalInvocationID.x;
+    // Guard against going out of range
+    if (id >= boidCount) return;
+
+    // Retrieve entry
+    Entry e = entries[id];
+    uvec3 gridPos = mortonDecode(e.key);
+
+    if (id == 0) {
+        // If we are the first entry, we just set a start offset for our gridPos
+        gridCells[getGridIndex(gridPos)].offsetStart = 0;
+    } else {
+        // Get last entry
+        Entry eLast = entries[id - 1];
+        uvec3 gridPosLast = mortonDecode(eLast.key);
+
+        // Check if this element has a different gridPos than the last
+        // If so, we set offsetEnd for the last gridPos and offset start for this one.
+        if (gridPosLast != gridPos) {
+            gridCells[getGridIndex(gridPosLast)].offsetEnd = id;
+            gridCells[getGridIndex(gridPos)].offsetStart = id;
+        }
+        // If we are the last element, we set the offsetEnd
+        if (id == boidCount - 1) {
+            gridCells[getGridIndex(gridPos)].offsetEnd = id + 1;
+        }
+    }
+
+    // Write the entry value (index to the instances buffer) into elements.
+    gridElements[id] = e.value;
+}

@@ -28,6 +28,12 @@ BoidsCompute::BoidsCompute(const std::shared_ptr<BoidsParams>& parameters)
     spatial_sort_shader_prog->attach_shader(grid_sort_shader);
     spatial_sort_shader_prog->link();
 
+    // Create spatial post shader program
+    Shaders::Shader grid_post_shader(spatial_post_shader_path, GL_COMPUTE_SHADER);
+    spatial_post_shader_prog = std::make_unique<Shaders::ShaderProgram>();
+    spatial_post_shader_prog->attach_shader(grid_post_shader);
+    spatial_post_shader_prog->link();
+
     // Create simulation shader program
     Shaders::Shader sim_shader(shader_sim_path, GL_COMPUTE_SHADER);
     sim_shader_prog = std::make_unique<Shaders::ShaderProgram>();
@@ -40,6 +46,7 @@ void BoidsCompute::compute(float delta, BoidsData& data) {
     run_grid_key_shader(data);
     run_grid_hist_shader(data);
     run_grid_sort_shader(data);
+    run_grid_post_shader(data);
     run_sim_shader(delta, data);
 
     // Switch instance data buffers
@@ -96,6 +103,22 @@ inline void BoidsCompute::run_grid_sort_shader(BoidsData& data) {
     }
 }
 
+inline void BoidsCompute::run_grid_post_shader(BoidsData& data) {
+    // Prepare shader program
+    spatial_post_shader_prog->use();
+    spatial_post_shader_prog->set_uniform_uint("boidCount", params->boids);
+    spatial_post_shader_prog->set_uniform_uvec3("gridSize", data.spatial_grid_size);
+    // Bind buffers
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, data.spatial_grid_entries_A);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, data.spatial_grid_cells_BO);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, data.spatial_grid_elements_BO);
+
+    // Dispatch
+    int dispatches = (initialized_boids + work_group_size - 1) / work_group_size;
+    glDispatchCompute(dispatches, 1, 1);
+    glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
+}
+
 inline void BoidsCompute::run_sim_shader(float delta, const BoidsData& data) {
     // Prepare simulation shader program
     sim_shader_prog->use();
@@ -117,6 +140,8 @@ inline void BoidsCompute::run_sim_shader(float delta, const BoidsData& data) {
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, data.instances_BO_A);
     // Bind instances data output uniform
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, data.instances_BO_B);
+    // Bind spatial grid data
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, data.spatial_grid_entries_A);
 
     // Dispatch shader programs
     int dispatches = (initialized_boids + work_group_size - 1) / work_group_size;
