@@ -17,7 +17,7 @@ struct GridCell {
 };
 
 struct Entry {
-    uvec2 key;
+    uint key[2];
     uint value;
 };
 
@@ -55,14 +55,14 @@ void main() {
     barrier();
 
     if (id < boidCount) {
-        uvec2 v = entriesSrc[id].key;
+        uint v[2] = entriesSrc[id].key;
 
         // Add to local histogram value for each pass
         // First 32 bits
         for (uint px = 0u; px < (passes / 2u); px++) {
             uint shift = px * bits;
             // Determine bucket of value
-            uint b = (v.x >> shift) & bitMask;
+            uint b = (v[0] >> shift) & bitMask;
             // Add 1 to bucket count
             atomicAdd(localHists[px].buckets[b], 1);
         }
@@ -70,7 +70,7 @@ void main() {
         for (uint py = 0u; py < passes / 2u; py++) {
             // Determine bucket of value
             uint shift = py * bits;
-            uint b = (v.y >> shift) & bitMask;
+            uint b = (v[1] >> shift) & bitMask;
             // Add 1 to bucket count
             atomicAdd(localHists[py + passes / 2u].buckets[b], 1);
         }

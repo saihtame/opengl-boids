@@ -1,6 +1,7 @@
 #pragma once
 #include "boids/boids_params.hpp"
 #include "render/mesh/mesh_render_data.hpp"
+#include <cstdint>
 #include <glm/ext/vector_float3.hpp>
 #include <glm/ext/vector_int3.hpp>
 #include <memory>
@@ -13,6 +14,10 @@ public:
     BoidsData(const std::shared_ptr<Render::Mesh::Mesh>& mesh, const std::shared_ptr<BoidsParams>& params);
     ~BoidsData();
 
+    void switch_instance_buffers();
+    void switch_entries_buffers();
+
+public: // Buffer ids
     // The unique data for each boid resides in instance_BO_A.
     // New data is written into instance_BO_B, after which the buffers are swapped.
     unsigned int instances_BO_A = 0;
@@ -33,31 +38,58 @@ public:
     // It is calculated using the params->bounds divided int cells of params->view_range size.
     glm::ivec3 spatial_grid_size;
 
-    void switch_instance_buffers();
-    void switch_entries_buffers();
+public: // Structs representing the sizes of the structs in the shaders
+    struct Instance {
+        float pos_x;
+        float pos_y;
+        float pos_z;
+        float pos_padding;
+        float vel_x;
+        float vel_y;
+        float vel_z;
+        float vel_padding;
+        uint grid_pos_x;
+        uint grid_pos_y;
+        uint grid_pos_z;
+        uint grid_pos_padding;
+    };
+    static_assert(sizeof(Instance) == 48);
+
+    struct SortEntry {
+        uint32_t key[2];
+        uint32_t value;
+    };
+    static_assert(sizeof(SortEntry) == 12);
+
+    struct Histogram {
+        uint32_t buckets[16];
+    };
+    static_assert(sizeof(Histogram) == 16*sizeof(uint32_t));
+
+    struct GridCell {
+        uint32_t StartOffset;
+        uint32_t EndOffset;
+    };
+    static_assert(sizeof(GridCell) == 8);
+
+public: // Buffer sizes.
+    unsigned int instances_buffer_size = 0;
+    unsigned int grid_cells_buffer_size = 0;
+    unsigned int grid_elements_buffer_size = 0;
+    unsigned int grid_entries_buffer_size = 0;
 
 private:
     inline void set_vao_attributes();
 
 public:
-    // Size in floats of each instance
-    static constexpr uint32_t instance_float_size = 48;
-    // Size in bytes of each instance
-    static constexpr uint32_t instance_byte_size = instance_float_size / sizeof(float);
-    // Size in bytes of each grid cell (uint start, uint end)
-    static constexpr uint32_t grid_cell_size = 8;
-    // Size in bytes of each grid cell element (uint value)
-    static constexpr uint32_t grid_element_size = 4;
-    // Size in bytes of each sorting entry (key = 8 bytes, value = 4)
-    static constexpr uint32_t grid_entry_size = 12;
     // The amount of bits each pass of the radix shader processes
     static constexpr uint32_t grid_radix_bits = 4;
     // The amount of passes the radix shader needs to do
     static constexpr uint32_t grid_radix_passes = 64 / grid_radix_bits;
     // The amount of buckets, for each radix pass
-    static constexpr uint32_t grid_radix_buckets = 1 << grid_radix_bits;
+    static constexpr uint32_t grid_radix_buckets = 1 << grid_radix_bits; // 16
     // The total size of the histogram buffer in bytes
-    static constexpr uint32_t grid_hist_buffer_size = grid_radix_buckets * grid_radix_passes * sizeof(unsigned int);
+    static constexpr uint32_t grid_hist_buffer_size = grid_radix_passes * sizeof(Histogram);
 };
 
 }

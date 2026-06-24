@@ -6,6 +6,7 @@
 #include <glm/geometric.hpp>
 #include <glm/gtc/random.hpp>
 #include <memory>
+#include <sys/types.h>
 
 
 namespace ParticleSim::Boids {
@@ -13,8 +14,8 @@ namespace ParticleSim::Boids {
 BoidsData::BoidsData(const std::shared_ptr<Render::Mesh::Mesh>& mesh, const std::shared_ptr<BoidsParams>& params)
     : Render::Mesh::MeshRenderData(mesh) {
     // Prepare initial instances data
-    std::vector<float> data;
-    data.resize(params->boids * instance_byte_size);
+    std::vector<Instance> data;
+    data.resize(params->boids);
     for (int i = 0; i < params->boids; i++) {
         // Position data
         glm::vec3 pos = glm::vec3(
@@ -22,26 +23,26 @@ BoidsData::BoidsData(const std::shared_ptr<Render::Mesh::Mesh>& mesh, const std:
             glm::linearRand(1.0f, params->bounds.y - 1.0f),
             glm::linearRand(1.0f, params->bounds.z - 1.0f)
         );
-        data[i * instance_byte_size]     = pos.x;
-        data[i * instance_byte_size + 1] = pos.y;
-        data[i * instance_byte_size + 2] = pos.z;
-        data[i * instance_byte_size + 3] = 0.0f; // Padding
+        data[i].pos_x       = pos.x;
+        data[i].pos_y       = pos.y;
+        data[i].pos_z       = pos.z;
+        data[i].pos_padding = 0.0f; // Padding
         // Velocity data
         glm::vec3 vel = glm::normalize(glm::vec3(
             glm::linearRand(-1.0, 1.0),
             glm::linearRand(-1.0, 1.0),
             glm::linearRand(-1.0, 1.0)
         )) * glm::linearRand(params->boid_min_speed, params->boid_max_speed);
-        data[i * instance_byte_size + 4] = vel.x;
-        data[i * instance_byte_size + 5] = vel.y;
-        data[i * instance_byte_size + 6] = vel.z;
-        data[i * instance_byte_size + 7] = 0.0f; // Padding
+        data[i].vel_x       = vel.x;
+        data[i].vel_y       = vel.y;
+        data[i].vel_z       = vel.z;
+        data[i].vel_padding = 0.0f; // Padding
         // grid cell
         glm::uvec3 grid_cell = glm::uvec3(glm::ceil(pos / params->view_range));
-        data[i * instance_byte_size + 8] = std::bit_cast<float>(grid_cell.x);
-        data[i * instance_byte_size + 9] = std::bit_cast<float>(grid_cell.y);
-        data[i * instance_byte_size + 10] = std::bit_cast<float>(grid_cell.z);
-        data[i * instance_byte_size + 11] = 0.0f;
+        data[i].grid_pos_x       = std::bit_cast<float>(grid_cell.x);
+        data[i].grid_pos_y       = std::bit_cast<float>(grid_cell.y);
+        data[i].grid_pos_z       = std::bit_cast<float>(grid_cell.z);
+        data[i].grid_pos_padding = 0.0f;
     }
 
     // Create instances buffers
@@ -49,27 +50,27 @@ BoidsData::BoidsData(const std::shared_ptr<Render::Mesh::Mesh>& mesh, const std:
     glGenBuffers(1, &instances_BO_B);
     // Copy data over to buffer A
     glBindBuffer(GL_ARRAY_BUFFER, instances_BO_A);
-    glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(float), data.data(), GL_DYNAMIC_COPY);
+    instances_buffer_size = data.size() * sizeof(Instance);
+    glBufferData(GL_ARRAY_BUFFER, instances_buffer_size, data.data(), GL_DYNAMIC_COPY);
     // Reserve space in buffer B, without copying data to it
     glBindBuffer(GL_ARRAY_BUFFER, instances_BO_B);
-    glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(float), NULL, GL_DYNAMIC_COPY);
+    glBufferData(GL_ARRAY_BUFFER, instances_buffer_size, NULL, GL_DYNAMIC_COPY);
     // Set vao attributes
     set_vao_attributes();
 
-    // Calculate size of spatial grid buffers
+    // Create spatial grid cells buffer
     spatial_grid_size = glm::ivec3(
         glm::ceil(params->bounds.x / params->view_range),
         glm::ceil(params->bounds.y / params->view_range),
         glm::ceil(params->bounds.z / params->view_range));
     int total_cells = spatial_grid_size.x + spatial_grid_size.y + spatial_grid_size.z;
-    int grid_cells_buffer_size = total_cells * grid_cell_size;
-    int grid_elements_buffer_size = params->boids * grid_element_size;
-
-    // Create spatial grid cells buffer
+    grid_cells_buffer_size = total_cells * sizeof(GridCell);
     glGenBuffers(1, &spatial_grid_cells_BO);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, spatial_grid_cells_BO);
     glBufferData(GL_SHADER_STORAGE_BUFFER, grid_cells_buffer_size, NULL, GL_DYNAMIC_COPY);
+
     // Create spatial grid elements buffer
+    grid_elements_buffer_size = params->boids * sizeof(uint32_t);
     glGenBuffers(1, &spatial_grid_elements_BO);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, spatial_grid_elements_BO);
     glBufferData(GL_SHADER_STORAGE_BUFFER, grid_elements_buffer_size, NULL, GL_DYNAMIC_COPY);
@@ -82,10 +83,11 @@ BoidsData::BoidsData(const std::shared_ptr<Render::Mesh::Mesh>& mesh, const std:
     // Create the element entries buffers
     glGenBuffers(1, &spatial_grid_entries_A);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, spatial_grid_entries_A);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, params->boids * grid_entry_size, NULL, GL_DYNAMIC_COPY);
+    grid_entries_buffer_size = params->boids * sizeof(SortEntry);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, grid_entries_buffer_size, NULL, GL_DYNAMIC_COPY);
     glGenBuffers(1, &spatial_grid_entries_B);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, spatial_grid_entries_B);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, params->boids * grid_entry_size, NULL, GL_DYNAMIC_COPY);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, grid_entries_buffer_size, NULL, GL_DYNAMIC_COPY);
 }
 
 BoidsData::~BoidsData() {
@@ -127,10 +129,10 @@ void BoidsData::set_vao_attributes() {
     // Bind instance buffer
     glBindBuffer(GL_ARRAY_BUFFER, instances_BO_A);
     // Set attributes
-    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, instance_float_size * sizeof(float), (void*)0);
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Instance), (void*)0);
     glEnableVertexAttribArray(3);
     glVertexAttribDivisor(3, 1);
-    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, instance_float_size * sizeof(float), (void*)(4 * sizeof(float)));
+    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Instance), (void*)(4 * sizeof(float)));
     glEnableVertexAttribArray(4);
     glVertexAttribDivisor(4, 1);
 }

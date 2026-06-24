@@ -38,6 +38,12 @@ private:
     inline void run_grid_sort_shader(BoidsData& data);
     inline void run_grid_post_shader(BoidsData& data);
     inline void run_sim_shader(float delta, const BoidsData& data);
+
+private:
+    inline void validate_grid_key_shader(const BoidsData& data);
+    inline void validate_grid_hist_shader(const BoidsData& data);
+    inline void validate_grid_radix_shader(const BoidsData& data);
+    inline void validate_grid_post_shader(const BoidsData& data);
 };
 
 }

@@ -8,7 +8,7 @@ struct GridCell {
 };
 
 struct Entry {
-    uvec2 key;
+    uint key[2];
     uint value;
 };
 
@@ -32,24 +32,24 @@ layout(std430, binding = 2) buffer GridElements {
 
 /*---- Helpers ----*/
 // Used by mortonDecode, for decoding single bits
-uint mortonDecodeBit(uvec2 key, uint bit, uint i, uint j) {
+uint mortonDecodeBit(uint key[2], uint bit, uint i, uint j) {
     if (bit < 32u) {
         uint shift = i * 2u + j;
         uint mask = 0x1 << bit;
-        return (key.x & mask) >> shift;
+        return (key[0] & mask) >> shift;
     } else {
         int shift = int(i + j - (bit - 32u));
         uint mask = 0x1 << (bit - 32u);
         if (shift < 0) {
-            return (key.y & mask) << (-shift);
+            return (key[1] & mask) << (-shift);
         } else {
-            return (key.y & mask) >> (shift);
+            return (key[1] & mask) >> (shift);
         }
     }
 }
 
 // Decodes a mortonEncoded uvec2 to a uvec3 representing a grid pos
-uvec3 mortonDecode(uvec2 key) {
+uvec3 mortonDecode(uint key[2]) {
     uvec3 res = uvec3(0u);
     for (uint i = 0; i < 21u; i++) {
         // X
