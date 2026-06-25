@@ -9,6 +9,7 @@
 #include <iostream>
 #include <memory>
 #include <sys/types.h>
+#include <unordered_set>
 
 
 #define VALIDATE_SHADER_RESULTS
@@ -67,7 +68,6 @@ void BoidsCompute::compute(float delta, BoidsData& data) {
     #ifdef VALIDATE_SHADER_RESULTS
     validate_grid_hist_shader(data);
     #endif
-return;
     // Grid key sorting shader
     run_grid_sort_shader(data);
     #ifdef VALIDATE_SHADER_RESULTS
@@ -316,8 +316,40 @@ inline void validate_grid_hist_shader(const BoidsData& data) {
     free(histograms_buffer);
 }
 
-inline void validate_grid_radix_shader(const BoidsData& ) {
+inline void validate_grid_radix_shader(const BoidsData& data) {
+    // Entries
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, data.spatial_grid_entries_A);
+    BoidsData::SortEntry* entries_buffer = (BoidsData::SortEntry*)malloc(data.grid_entries_buffer_size);
+    glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, data.grid_entries_buffer_size, entries_buffer);
 
+    // Validate entries
+    std::unordered_set<uint32_t> seen_values;
+    uint64_t lastKey = 0u;
+    for (uint i = 0; i < data.initialized_boids; i++) {
+        BoidsData::SortEntry e = entries_buffer[i];
+        // Check for double entry
+        if (seen_values.contains(e.value)) {
+            std::cerr << "\033[31mSort Double Value:\t" << e.value << "\033[0m" << std::endl;
+        } else {
+            seen_values.emplace(e.value);
+        }
+        // Check too high value
+        if (e.value >= data.initialized_boids) {
+            std::cerr << "\033[31mSort Too High Value:\t" << e.value << "\033[0m" << std::endl;
+        }
+        // Check order
+        uint64_t key = ((uint64_t)e.key[0] << 32 | e.key[1]);
+        if (key < lastKey) {
+            std::cerr << "\033[31mSort Unordered Keys:\t" << lastKey << "\t" << key << "\033[0m" << std::endl;
+        }
+        lastKey = key;
+    }
+    // Ensure all values are there
+    for (uint32_t i = 0; i < data.initialized_boids; i++) {
+        if (!seen_values.contains(i)) {
+            std::cerr << "\033[31mSort Missing Value:\t" << i << "\033[0m" << std::endl;
+        }
+    }
 }
 
 inline void validate_grid_post_shader(const BoidsData& ) {
