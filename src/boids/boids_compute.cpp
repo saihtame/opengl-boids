@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <glad/gl.h>
 #include <glm/ext/vector_float3.hpp>
+#include <glm/ext/vector_uint3.hpp>
 #include <iostream>
 #include <memory>
 #include <sys/types.h>
@@ -24,7 +25,7 @@ inline void validate_grid_post_shader(const BoidsData& data);
 #endif
 
 BoidsCompute::BoidsCompute(const std::shared_ptr<BoidsParams>& parameters)
-    : initialized_boids(parameters->boids), params(parameters) {
+    :  params(parameters) {
     // Create spatial cell key shader program
     Shaders::Shader cell_key_shader(spatial_key_shader_path, GL_COMPUTE_SHADER);
     spatial_key_shader_prog = std::make_unique<Shaders::ShaderProgram>();
@@ -80,22 +81,19 @@ void BoidsCompute::compute(float delta, BoidsData& data) {
     #endif
     // Sim shader
     run_sim_shader(delta, data);
-
-    // Switch instance data buffers
-    data.switch_instance_buffers();
 }
 
 inline void BoidsCompute::run_grid_key_shader(const BoidsData& data) {
     // Prepare cell key shader program
     spatial_key_shader_prog->use();
-    spatial_key_shader_prog->set_uniform_uint("boidCount", initialized_boids);
+    spatial_key_shader_prog->set_uniform_uint("boidCount", data.initialized_boids);
 
     // Bind instances data input uniform
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, data.instances_BO_A);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, data.spatial_grid_entries_A);
 
     // Dispatch shader program
-    int dispatches = (initialized_boids + work_group_size - 1) / work_group_size;
+    int dispatches = (data.initialized_boids + work_group_size - 1) / work_group_size;
     glDispatchCompute(dispatches, 1, 1);
     glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
 }
@@ -120,7 +118,7 @@ inline void BoidsCompute::run_grid_hist_shader(const BoidsData& data) {
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, data.spatial_grid_hist_BO);
 
     // Dispatch shader program
-    int dispatches = (initialized_boids + work_group_size - 1) / work_group_size;
+    int dispatches = (data.initialized_boids + work_group_size - 1) / work_group_size;
     glDispatchCompute(dispatches, 1, 1);
     glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
 }
@@ -144,25 +142,35 @@ inline void BoidsCompute::run_grid_sort_shader(BoidsData& data) {
 }
 
 inline void BoidsCompute::run_grid_post_shader(BoidsData& data) {
+    // Clear grid cells buffer before running
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, data.spatial_grid_cells_BO);
+    GLuint zero = 0;
+    glClearBufferData(GL_SHADER_STORAGE_BUFFER,
+                    GL_R32UI,
+                    GL_RED_INTEGER,
+                    GL_UNSIGNED_INT,
+                    &zero);
+    glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
+
     // Prepare shader program
     spatial_post_shader_prog->use();
-    spatial_post_shader_prog->set_uniform_uint("boidCount", params->boids);
-    spatial_post_shader_prog->set_uniform_uvec3("gridSize", data.spatial_grid_size);
+    spatial_post_shader_prog->set_uniform_uint("boidCount", data.initialized_boids);
+    spatial_post_shader_prog->set_uniform_ivec3("gridSize", data.spatial_grid_size);
     // Bind buffers
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, data.spatial_grid_entries_A);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, data.spatial_grid_cells_BO);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, data.spatial_grid_elements_BO);
 
     // Dispatch
-    int dispatches = (initialized_boids + work_group_size - 1) / work_group_size;
+    int dispatches = (data.initialized_boids + work_group_size - 1) / work_group_size;
     glDispatchCompute(dispatches, 1, 1);
     glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
 }
 
-inline void BoidsCompute::run_sim_shader(float delta, const BoidsData& data) {
+inline void BoidsCompute::run_sim_shader(float delta, BoidsData& data) {
     // Prepare simulation shader program
     sim_shader_prog->use();
-    sim_shader_prog->set_uniform_uint("boidCount", initialized_boids);
+    sim_shader_prog->set_uniform_uint("boidCount", data.initialized_boids);
     sim_shader_prog->set_uniform_vec3("bounds", params->bounds);
     sim_shader_prog->set_uniform_float("boidMaxSpeed", params->boid_max_speed);
     sim_shader_prog->set_uniform_float("boidMinSpeed", params->boid_min_speed);
@@ -185,9 +193,12 @@ inline void BoidsCompute::run_sim_shader(float delta, const BoidsData& data) {
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, data.spatial_grid_entries_A);
 
     // Dispatch shader programs
-    int dispatches = (initialized_boids + work_group_size - 1) / work_group_size;
+    int dispatches = (data.initialized_boids + work_group_size - 1) / work_group_size;
     glDispatchCompute(dispatches, 1, 1);
     glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
+
+    // Switch instance data buffers
+    data.switch_instance_buffers();
 }
 
 /*---- Validation Functions used for debugging ----*/
@@ -333,12 +344,12 @@ inline void validate_grid_radix_shader(const BoidsData& data) {
         } else {
             seen_values.emplace(e.value);
         }
-        // Check too high value
+        // Check too high valueinitialized_boids(parameters->boids),
         if (e.value >= data.initialized_boids) {
             std::cerr << "\033[31mSort Too High Value:\t" << e.value << "\033[0m" << std::endl;
         }
         // Check order
-        uint64_t key = ((uint64_t)e.key[0] << 32 | e.key[1]);
+        uint64_t key = ((uint64_t)e.key[1] << 32 | e.key[0]);
         if (key < lastKey) {
             std::cerr << "\033[31mSort Unordered Keys:\t" << lastKey << "\t" << key << "\033[0m" << std::endl;
         }
@@ -352,8 +363,50 @@ inline void validate_grid_radix_shader(const BoidsData& data) {
     }
 }
 
-inline void validate_grid_post_shader(const BoidsData& ) {
+uint getGridIndex(glm::uvec3 pos, glm::uvec3 grid_size) {
+    return pos.x + pos.y * grid_size.x + pos.z * grid_size.x * grid_size.y;
+}
 
+inline void validate_grid_post_shader(const BoidsData& data) {
+    /*---- Copy data from GPU to CPU ----*/
+    // Cells Bufffer
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, data.spatial_grid_cells_BO);
+    BoidsData::GridCell* grid_cells = (BoidsData::GridCell*)malloc(data.grid_cells_buffer_size);
+    glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, data.grid_cells_buffer_size, grid_cells);
+    // Elements Bufffer
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, data.spatial_grid_elements_BO);
+    uint32_t* elements_buffer = (uint32_t*)malloc(data.grid_elements_buffer_size);
+    glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, data.grid_elements_buffer_size, elements_buffer);
+    // Instances buffer
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, data.instances_BO_A);
+    BoidsData::Instance* instances_buffer = (BoidsData::Instance*)malloc(data.instances_buffer_size);
+    glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, data.instances_buffer_size, instances_buffer);
+
+    // Check all grid cells
+    uint total_instances = 0u;
+    for (int x = 0; x < data.spatial_grid_size.x; x++) {
+        for (int y = 0; y < data.spatial_grid_size.y; y++) {
+            for (int z  = 0; z < data.spatial_grid_size.z; z++) {
+                BoidsData::GridCell cell = grid_cells[getGridIndex(glm::uvec3(x, y, z), data.spatial_grid_size)];
+                // Iterate all elements in cell
+                for (uint i = cell.StartOffset; i < cell.EndOffset; i++) {
+                    uint32_t element_ind = elements_buffer[i];
+                    BoidsData::Instance instance = instances_buffer[element_ind];
+                    total_instances++;
+
+                    if (instance.grid_pos_x != (uint)x || instance.grid_pos_y != (uint)y || instance.grid_pos_z != (uint)z) {
+                        std::cerr << "\033[31mElement in grid cell, does not have right grid pos:\t" << "\n";
+                        std::cerr << "X Value:\t" << instance.grid_pos_x << "\tExpected:\t" << x << "\n";
+                        std::cerr << "Y Value:\t" << instance.grid_pos_y << "\tExpected:\t" << y << "\n";
+                        std::cerr << "Z value:\t" << instance.grid_pos_z << "\tExpected:\t" << z << "\033[0m" << std::endl;
+                    }
+                }
+            }
+        }
+    }
+    if (total_instances != data.initialized_boids) {
+        std::cerr << "\033[31mElement count wrong:\t" << total_instances << "\tExpected value:\t" << data.initialized_boids << "\033[0m" << std::endl;
+    }
 }
 
 }

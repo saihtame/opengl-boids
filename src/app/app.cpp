@@ -28,6 +28,7 @@ void GLAPIENTRY MessageCallback(GLenum,
                  const void*) {
     // Skip notifications
     if (severity == GL_DEBUG_SEVERITY_NOTIFICATION) return;
+    return;
     // Print error
     fprintf( stderr, "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
             ( type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : "" ),

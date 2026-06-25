@@ -4,6 +4,7 @@
 #include <glm/ext/vector_uint3.hpp>
 #include <glm/geometric.hpp>
 #include <glm/gtc/random.hpp>
+#include <iostream>
 #include <memory>
 #include <sys/types.h>
 
@@ -18,6 +19,8 @@ BoidsData::BoidsData(const std::shared_ptr<Render::Mesh::Mesh>& mesh, const std:
         glm::ceil(params->bounds.x / spatial_grid_cell_size.x),
         glm::ceil(params->bounds.y / spatial_grid_cell_size.y),
         glm::ceil(params->bounds.z / spatial_grid_cell_size.z));
+
+    std::cout << "Spatial Grid Size:\t" << spatial_grid_size.x << "\t" << spatial_grid_size.y << "\t" << spatial_grid_size.z << std::endl;
 
     // Prepare initial instances data
     std::vector<Instance> data;
@@ -44,7 +47,8 @@ BoidsData::BoidsData(const std::shared_ptr<Render::Mesh::Mesh>& mesh, const std:
         data[i].vel_z       = vel.z;
         data[i].vel_padding = 0.0f; // Padding
         // grid cell
-        glm::uvec3 grid_cell = glm::uvec3(glm::ceil(pos / params->view_range));
+        glm::uvec3 grid_cell = glm::uvec3(glm::floor(pos / spatial_grid_cell_size));
+        grid_cell = glm::clamp(grid_cell, glm::uvec3(0), glm::uvec3(spatial_grid_size) - 1u);
         data[i].grid_pos_x       = grid_cell.x;
         data[i].grid_pos_y       = grid_cell.y;
         data[i].grid_pos_z       = grid_cell.z;
@@ -65,7 +69,7 @@ BoidsData::BoidsData(const std::shared_ptr<Render::Mesh::Mesh>& mesh, const std:
     set_vao_attributes();
 
     // Create spatial grid cells buffer
-    int total_cells = spatial_grid_size.x + spatial_grid_size.y + spatial_grid_size.z;
+    int total_cells = spatial_grid_size.x * spatial_grid_size.y * spatial_grid_size.z;
     grid_cells_buffer_size = total_cells * sizeof(GridCell);
     glGenBuffers(1, &spatial_grid_cells_BO);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, spatial_grid_cells_BO);

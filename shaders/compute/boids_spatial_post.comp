@@ -14,7 +14,7 @@ struct Entry {
 
 /*---- Uniforms ----*/
 layout (location = 0) uniform uint boidCount;
-layout (location = 1) uniform uvec3 gridSize;
+layout (location = 1) uniform ivec3 gridSize;
 
 /*---- Buffers ----*/
 // Contains sorted key-value pairs for each boid instance
