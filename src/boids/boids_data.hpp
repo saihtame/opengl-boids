@@ -34,9 +34,17 @@ public: // Buffer ids
     // Double buffering is used for the radix sort
     unsigned int spatial_grid_entries_A = 0;
     unsigned int spatial_grid_entries_B = 0;
+
+public: // Buffer sizes.
+    unsigned int instances_buffer_size = 0;
+    unsigned int grid_cells_buffer_size = 0;
+    unsigned int grid_elements_buffer_size = 0;
+    unsigned int grid_entries_buffer_size = 0;
     // The calculated size of the spatial grid where boids are laid out.
     // It is calculated using the params->bounds divided int cells of params->view_range size.
     glm::ivec3 spatial_grid_size;
+    glm::vec3 spatial_grid_cell_size;
+    uint32_t initialized_boids = 0;
 
 public: // Structs representing the sizes of the structs in the shaders
     struct Instance {
@@ -64,19 +72,13 @@ public: // Structs representing the sizes of the structs in the shaders
     struct Histogram {
         uint32_t buckets[16];
     };
-    static_assert(sizeof(Histogram) == 16*sizeof(uint32_t));
+    static_assert(sizeof(Histogram) == 64);
 
     struct GridCell {
         uint32_t StartOffset;
         uint32_t EndOffset;
     };
     static_assert(sizeof(GridCell) == 8);
-
-public: // Buffer sizes.
-    unsigned int instances_buffer_size = 0;
-    unsigned int grid_cells_buffer_size = 0;
-    unsigned int grid_elements_buffer_size = 0;
-    unsigned int grid_entries_buffer_size = 0;
 
 private:
     inline void set_vao_attributes();
@@ -85,11 +87,9 @@ public:
     // The amount of bits each pass of the radix shader processes
     static constexpr uint32_t grid_radix_bits = 4;
     // The amount of passes the radix shader needs to do
-    static constexpr uint32_t grid_radix_passes = 64 / grid_radix_bits;
-    // The amount of buckets, for each radix pass
-    static constexpr uint32_t grid_radix_buckets = 1 << grid_radix_bits; // 16
+    static constexpr uint32_t grid_radix_passes = 64 / grid_radix_bits; // 16
     // The total size of the histogram buffer in bytes
-    static constexpr uint32_t grid_hist_buffer_size = grid_radix_passes * sizeof(Histogram);
+    static constexpr uint32_t grid_hist_buffer_size = grid_radix_passes * sizeof(Histogram); // 1024
 };
 
 }

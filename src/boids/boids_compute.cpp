@@ -2,6 +2,7 @@
 #include "boids/boids_data.hpp"
 #include "shaders/shader.hpp"
 #include "shaders/shader_program.hpp"
+#include <array>
 #include <cstdint>
 #include <glad/gl.h>
 #include <glm/ext/vector_float3.hpp>
@@ -14,6 +15,13 @@
 
 namespace ParticleSim::Boids {
 
+#ifdef VALIDATE_SHADER_RESULTS
+inline void validate_grid_key_shader(const BoidsData& data);
+inline void validate_grid_hist_shader(const BoidsData& data);
+inline void validate_grid_radix_shader(const BoidsData& data);
+inline void validate_grid_post_shader(const BoidsData& data);
+#endif
+
 BoidsCompute::BoidsCompute(const std::shared_ptr<BoidsParams>& parameters)
     : initialized_boids(parameters->boids), params(parameters) {
     // Create spatial cell key shader program
@@ -25,7 +33,7 @@ BoidsCompute::BoidsCompute(const std::shared_ptr<BoidsParams>& parameters)
     // Create spatial cell key shader program
     Shaders::Shader cell_hist_shader(spatial_hist_shader_path, GL_COMPUTE_SHADER);
     spatial_hist_shader_prog = std::make_unique<Shaders::ShaderProgram>();
-    spatial_hist_shader_prog->attach_shader(cell_key_shader);
+    spatial_hist_shader_prog->attach_shader(cell_hist_shader);
     spatial_hist_shader_prog->link();
 
     // Create spatial grid sort shader program
@@ -59,6 +67,7 @@ void BoidsCompute::compute(float delta, BoidsData& data) {
     #ifdef VALIDATE_SHADER_RESULTS
     validate_grid_hist_shader(data);
     #endif
+return;
     // Grid key sorting shader
     run_grid_sort_shader(data);
     #ifdef VALIDATE_SHADER_RESULTS
@@ -92,8 +101,19 @@ inline void BoidsCompute::run_grid_key_shader(const BoidsData& data) {
 }
 
 inline void BoidsCompute::run_grid_hist_shader(const BoidsData& data) {
+    // Clear histogram buffer before running
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, data.spatial_grid_hist_BO);
+    GLuint zero = 0;
+    glClearBufferData(GL_SHADER_STORAGE_BUFFER,
+                    GL_R32UI,
+                    GL_RED_INTEGER,
+                    GL_UNSIGNED_INT,
+                    &zero);
+    glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
+
+    // Prepare shader
     spatial_hist_shader_prog->use();
-    spatial_hist_shader_prog->set_uniform_uint("boidCount", params->boids);
+    spatial_hist_shader_prog->set_uniform_uint("boidCount", data.initialized_boids);
 
     // Bind entries and histogram buffers
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, data.spatial_grid_entries_A);
@@ -154,6 +174,7 @@ inline void BoidsCompute::run_sim_shader(float delta, const BoidsData& data) {
     sim_shader_prog->set_uniform_float("alignmentFactor", params->alignment_factor);
     sim_shader_prog->set_uniform_float("cohesionFactor", params->cohesion_factor);
     sim_shader_prog->set_uniform_float("delta", delta);
+    sim_shader_prog->set_uniform_vec3("cellSize", data.spatial_grid_cell_size);
     sim_shader_prog->set_uniform_uvec3("gridSize", data.spatial_grid_size);
 
     // Bind instances data input uniform
@@ -189,7 +210,7 @@ std::array<uint32_t, 2> mortonEncode(uint32_t x, uint32_t y, uint32_t z) {
     return key;
 }
 
-inline void BoidsCompute::validate_grid_key_shader(const BoidsData& data) {
+inline void validate_grid_key_shader(const BoidsData& data) {
     /*---- Copy data from GPU to CPU ----*/
     // Instance buffer
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, data.instances_BO_A);
@@ -201,7 +222,7 @@ inline void BoidsCompute::validate_grid_key_shader(const BoidsData& data) {
     glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, data.grid_entries_buffer_size, entries_buffer);
 
     /*---- Validate Correct Data ----*/
-    for (uint32_t i = 0; i < initialized_boids; i++) {
+    for (uint32_t i = 0; i < data.initialized_boids; i++) {
         // Check entries index being written correct
         auto entry = entries_buffer[i];
         if (entry.value != i) {
@@ -224,27 +245,82 @@ inline void BoidsCompute::validate_grid_key_shader(const BoidsData& data) {
     free(entries_buffer);
 }
 
-inline void BoidsCompute::validate_grid_hist_shader(const BoidsData& data) {
+std::array<BoidsData::Histogram, BoidsData::grid_radix_passes> get_histograms(BoidsData::SortEntry* entries, uint32_t entriesCount) {
+    auto hists = std::array<BoidsData::Histogram, BoidsData::grid_radix_passes>();
+    uint32_t bitMask = 0;
+    for (uint i = 0; i < BoidsData::grid_radix_bits; i++) {
+        bitMask += 0x1 << i;
+    }
+
+    for (uint i = 0; i < entriesCount; i++) {
+        uint32_t v[2] = {entries[i].key[0], entries[i].key[1]};
+
+        // Add to local histogram value for each pass
+        // First 32 bits
+        for (uint px = 0u; px < (BoidsData::grid_radix_passes / 2u); px++) {
+            uint shift = px * BoidsData::grid_radix_bits;
+            // Determine bucket of value
+            uint b = (v[0] >> shift) & bitMask;
+            // Add 1 to bucket count
+            hists[px].buckets[b] += 1;
+        }
+        // Last 32 bits
+        for (uint py = 0u; py < BoidsData::grid_radix_passes / 2u; py++) {
+            // Determine bucket of value
+            uint shift = py * BoidsData::grid_radix_bits;
+            uint b = (v[1] >> shift) & bitMask;
+            // Add 1 to bucket count
+            hists[py + BoidsData::grid_radix_passes / 2u].buckets[b] += 1;
+        }
+    }
+
+    return hists;
+}
+
+inline void validate_grid_hist_shader(const BoidsData& data) {
     /*---- Copy data from GPU to CPU ----*/
     // Entries
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, data.spatial_grid_entries_A);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, data.spatial_grid_entries_A);
     BoidsData::SortEntry* entries_buffer = (BoidsData::SortEntry*)malloc(data.grid_entries_buffer_size);
     glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, data.grid_entries_buffer_size, entries_buffer);
     // Histograms
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, data.spatial_grid_hist_BO);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, data.spatial_grid_hist_BO);
     BoidsData::Histogram* histograms_buffer = (BoidsData::Histogram*)malloc(data.grid_hist_buffer_size);
-    glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, data.grid_hist_buffer_size, entries_buffer);
+    glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, data.grid_hist_buffer_size, histograms_buffer);
+
+    /*---- Validate Correct Data ----*/
+    auto goodHists = get_histograms(entries_buffer, data.initialized_boids);
+    for (uint p = 0; p < BoidsData::grid_radix_passes; p++) {
+        uint shader_pass_total = 0;
+        uint test_pass_total = 0;
+        for (uint b = 0; b < (64 / BoidsData::grid_radix_bits); b++) {
+            uint shader_bucket = histograms_buffer[p].buckets[b];
+            uint test_bucket = goodHists[p].buckets[b];
+            // Validate bucket
+            if (test_bucket != shader_bucket) {
+                std::cerr << "\033[31mBucket value: " << shader_bucket << "\tExpected value: " << test_bucket;
+                std::cerr << "\tPass: " << p << "\tBucket: " << b << "\033[0m" << std::endl;
+            }
+            shader_pass_total += shader_bucket;
+            test_pass_total += test_bucket;
+        }
+        // Validate pass histogram
+        if (shader_pass_total != test_pass_total) {
+            std::cerr << "\033[31mhist pass total: " << shader_pass_total << "\tExpected value: " << test_pass_total << "\t";
+            std::cerr << "Pass: " << p << "\033[0m" << std::endl;
+        }
+    }
 
     /*---- Cleanup ----*/
     free(entries_buffer);
     free(histograms_buffer);
 }
 
-inline void BoidsCompute::validate_grid_radix_shader(const BoidsData& ) {
+inline void validate_grid_radix_shader(const BoidsData& ) {
 
 }
 
-inline void BoidsCompute::validate_grid_post_shader(const BoidsData& ) {
+inline void validate_grid_post_shader(const BoidsData& ) {
 
 }
 

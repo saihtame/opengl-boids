@@ -26,7 +26,8 @@ layout (location = 8) uniform float seperationFactor;
 layout (location = 9) uniform float alignmentFactor;
 layout (location = 10) uniform float cohesionFactor;
 layout (location = 11) uniform float delta;
-layout (location = 12) uniform uvec3 gridSize;
+layout (location = 12) uniform vec3 cellSize;
+layout (location = 13) uniform uvec3 gridSize;
 
 /*---- Buffers ----*/
 layout(std430, binding = 0) buffer InstanceDataIn {
@@ -214,9 +215,9 @@ void main() {
 
     // Update gridCell value
     instance.gridCell = uvec3(
-        clamp(int(floor(instance.pos.x / viewRange)), 0, gridSize.x - 1),
-        clamp(int(floor(instance.pos.y / viewRange)), 0, gridSize.y - 1),
-        clamp(int(floor(instance.pos.z / viewRange)), 0, gridSize.z - 1)
+        clamp(int(floor(instance.pos.x / cellSize.x)), 0, gridSize.x - 1),
+        clamp(int(floor(instance.pos.y / cellSize.y)), 0, gridSize.y - 1),
+        clamp(int(floor(instance.pos.z / cellSize.z)), 0, gridSize.z - 1)
     );
 
     // Write to output buffer

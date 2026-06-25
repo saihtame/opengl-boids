@@ -1,5 +1,4 @@
 #include "boids_data.hpp"
-#include <bit>
 #include <glad/gl.h>
 #include <glm/ext/vector_float3.hpp>
 #include <glm/ext/vector_uint3.hpp>
@@ -13,6 +12,13 @@ namespace ParticleSim::Boids {
 
 BoidsData::BoidsData(const std::shared_ptr<Render::Mesh::Mesh>& mesh, const std::shared_ptr<BoidsParams>& params)
     : Render::Mesh::MeshRenderData(mesh) {
+    initialized_boids = params->boids;
+    spatial_grid_cell_size = glm::vec3(params->view_range, params->view_range, params->view_range);
+    spatial_grid_size = glm::ivec3(
+        glm::ceil(params->bounds.x / spatial_grid_cell_size.x),
+        glm::ceil(params->bounds.y / spatial_grid_cell_size.y),
+        glm::ceil(params->bounds.z / spatial_grid_cell_size.z));
+
     // Prepare initial instances data
     std::vector<Instance> data;
     data.resize(params->boids);
@@ -39,9 +45,9 @@ BoidsData::BoidsData(const std::shared_ptr<Render::Mesh::Mesh>& mesh, const std:
         data[i].vel_padding = 0.0f; // Padding
         // grid cell
         glm::uvec3 grid_cell = glm::uvec3(glm::ceil(pos / params->view_range));
-        data[i].grid_pos_x       = std::bit_cast<float>(grid_cell.x);
-        data[i].grid_pos_y       = std::bit_cast<float>(grid_cell.y);
-        data[i].grid_pos_z       = std::bit_cast<float>(grid_cell.z);
+        data[i].grid_pos_x       = grid_cell.x;
+        data[i].grid_pos_y       = grid_cell.y;
+        data[i].grid_pos_z       = grid_cell.z;
         data[i].grid_pos_padding = 0.0f;
     }
 
@@ -59,10 +65,6 @@ BoidsData::BoidsData(const std::shared_ptr<Render::Mesh::Mesh>& mesh, const std:
     set_vao_attributes();
 
     // Create spatial grid cells buffer
-    spatial_grid_size = glm::ivec3(
-        glm::ceil(params->bounds.x / params->view_range),
-        glm::ceil(params->bounds.y / params->view_range),
-        glm::ceil(params->bounds.z / params->view_range));
     int total_cells = spatial_grid_size.x + spatial_grid_size.y + spatial_grid_size.z;
     grid_cells_buffer_size = total_cells * sizeof(GridCell);
     glGenBuffers(1, &spatial_grid_cells_BO);

@@ -8,7 +8,7 @@ const uint bitMask = 0xf; // mask of the first 4 bits
 // The amount of passes the redix sort has do to
 const uint passes = 64u / bits;
 // The amount of bits each pass has to sort
-const uint bucketsPerPass = 1u << bits; // 2 to the power of bits
+const uint bucketsPerPass = 16; // 2 to the power of bits
 
 /*---- Structs ----*/
 struct GridCell {
@@ -22,7 +22,7 @@ struct Entry {
 };
 
 struct Histogram {
-    uint buckets[bucketsPerPass];
+    uint buckets[16];
 };
 
 /*---- Uniforms ----*/
@@ -56,24 +56,25 @@ void main() {
 
     // Guard against going out of bounds. Without block barriers.
     if (id < boidCount) {
-        uint v[2] = entriesSrc[id].key;
+        uint v0 = entriesSrc[id].key[0];
+        uint v1 = entriesSrc[id].key[1];
 
         // Add to local histogram value for each pass
         // First 32 bits
         for (uint px = 0u; px < (passes / 2u); px++) {
             uint shift = px * bits;
             // Determine bucket of value
-            uint b = (v[0] >> shift) & bitMask;
+            uint b = (v0 >> shift) & bitMask;
             // Add 1 to bucket count
-            atomicAdd(localHists[px].buckets[b], 1);
+            atomicAdd(localHists[px].buckets[b], 1u);
         }
         // Last 32 bits
         for (uint py = 0u; py < passes / 2u; py++) {
             // Determine bucket of value
             uint shift = py * bits;
-            uint b = (v[1] >> shift) & bitMask;
+            uint b = (v1 >> shift) & bitMask;
             // Add 1 to bucket count
-            atomicAdd(localHists[py + passes / 2u].buckets[b], 1);
+            atomicAdd(localHists[py + passes / 2u].buckets[b], 1u);
         }
     }
 
