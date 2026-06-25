@@ -1,5 +1,5 @@
 #pragma once
-#include "app/ui.hpp"
+#include "ui.hpp"
 #include "boids/scene.hpp"
 #include "core/camera.hpp"
 #include "render/renderable.hpp"

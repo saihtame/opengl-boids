@@ -29,11 +29,11 @@ struct Histogram {
 layout (location = 0) uniform uint boidCount;
 
 /*---- Buffers ----*/
-layout(std430, binding = 1) buffer EntriesSrc {
+layout(std430, binding = 0) buffer EntriesSrc {
     Entry entriesSrc[];
 };
 
-layout(std430, binding = 2) buffer Histograms {
+layout(std430, binding = 1) buffer Histograms {
     Histogram histograms[];
 };
 
@@ -44,7 +44,7 @@ shared Histogram localHists[passes];
 void main() {
     uint id = gl_GlobalInvocationID.x;
  
-    // Zero local hists
+    // Zero local workgroup histograms
     if (gl_LocalInvocationID.x == 0) {
         for (uint p = 0; p < passes; p++) {
             for (uint b = 0; b < bucketsPerPass; b++) {
@@ -54,6 +54,7 @@ void main() {
     }
     barrier();
 
+    // Guard against going out of bounds. Without block barriers.
     if (id < boidCount) {
         uint v[2] = entriesSrc[id].key;
 
@@ -76,7 +77,7 @@ void main() {
         }
     }
 
-    // Flush local histogram to global histogram
+    // Flush local workgroup histograms to global histograms
     barrier();
     if (gl_LocalInvocationID.x == 0) {
         for (int p = 0; p < passes; p++) {
