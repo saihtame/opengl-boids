@@ -13,7 +13,7 @@
 #include <unordered_set>
 
 
-#define VALIDATE_SHADER_RESULTS
+//#define VALIDATE_SHADER_RESULTS
 
 namespace ParticleSim::Boids {
 
@@ -185,12 +185,12 @@ inline void BoidsCompute::run_sim_shader(float delta, BoidsData& data) {
     sim_shader_prog->set_uniform_vec3("cellSize", data.spatial_grid_cell_size);
     sim_shader_prog->set_uniform_uvec3("gridSize", data.spatial_grid_size);
 
-    // Bind instances data input uniform
+    // Bind instances data input and output buffers
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, data.instances_BO_A);
-    // Bind instances data output uniform
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, data.instances_BO_B);
     // Bind spatial grid data
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, data.spatial_grid_entries_A);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, data.spatial_grid_cells_BO);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, data.spatial_grid_elements_BO);
 
     // Dispatch shader programs
     int dispatches = (data.initialized_boids + work_group_size - 1) / work_group_size;

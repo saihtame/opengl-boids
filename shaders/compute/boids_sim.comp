@@ -8,8 +8,13 @@ struct Instance {
     uvec3 gridCell;
 };
 
+struct GridCell {
+    uint offsetStart;
+    uint offsetEnd;
+};
+
 struct Entry {
-    uvec2 key;
+    uint key[2];
     uint value;
 };
 
@@ -38,8 +43,12 @@ layout(std430, binding = 1) buffer InstanceDataOut {
     Instance instancesOut[];
 };
 
-layout(std430, binding = 2) buffer Entries {
-    Entry entries[];
+layout(std430, binding = 2) buffer GridCells {
+    GridCell gridCells[];
+};
+
+layout(std430, binding = 3) buffer GridElements {
+    uint gridElements[];
 };
 
 /*---- Helpers ----*/
@@ -138,31 +147,42 @@ vec3 reactToNeighbours(Instance instance) {
     vec3 alignment = vec3(0.0f);
     vec3 cohesion = vec3(0.0f);
     int neighbours = 0;
-    for (uint i = 0; i < boidCount; i++) {
-        // Skip self
-        if (i == gl_GlobalInvocationID.x) continue;
-        // Get other instance
-        Instance other = instancesIn[i];
-        // Skip boids out of view range
-        vec3 dirToOther = other.pos - instance.pos;
-        if (!canNormalize(dirToOther)) continue;
-        float distanceToOther = length(dirToOther);
-        if (distanceToOther > viewRange) continue;
-        // Skip boids out of viewing angle
-        vec3 dirToOtherNormal = normalize(dirToOther);
-        vec3 velNormalized = normalize(instance.vel);
-        float angleToBoid = dot(dirToOtherNormal, velNormalized);
-        if (angleToBoid < viewCosine) continue;
-        // Increment neighbour count
-        neighbours++;
-        // Seperation
-        float distanceMul = 1 / distanceToOther;
-        seperation += -dirToOtherNormal * distanceMul;
-        // Allignment
-        vec3 velDiff = other.vel - instance.vel;
-        alignment += velDiff;
-        // Cohesion
-        cohesion += dirToOther;
+    // Iterate neighbouring grid cells
+    for (uint gridX = max(int(instance.gridCell.x) - 1, 0); gridX <= min(instance.gridCell.x + 1, gridSize.x); gridX++) {
+        for (uint gridY = max(int(instance.gridCell.y) - 1, 0); gridY <= min(instance.gridCell.y + 1, gridSize.y); gridY++) {
+            for (uint gridZ = max(int(instance.gridCell.z) - 1, 0); gridZ <= min(instance.gridCell.z + 1, gridSize.z); gridZ++) {
+                GridCell cell = gridCells[gridX + gridY * gridSize.x + gridZ * gridSize.x * gridSize.y];
+                
+                // Iterate boids in gridcell
+                for (uint i = cell.offsetStart; i < cell.offsetEnd; i++) {
+                    uint ind = gridElements[i];
+                    // Skip self
+                    if (ind == gl_GlobalInvocationID.x) continue;
+                    // Get other instance
+                    Instance other = instancesIn[ind];
+                    // Skip boids out of view range
+                    vec3 dirToOther = other.pos - instance.pos;
+                    if (!canNormalize(dirToOther)) continue;
+                    float distanceToOther = length(dirToOther);
+                    if (distanceToOther > viewRange) continue;
+                    // Skip boids out of viewing angle
+                    vec3 dirToOtherNormal = normalize(dirToOther);
+                    vec3 velNormalized = normalize(instance.vel);
+                    float angleToBoid = dot(dirToOtherNormal, velNormalized);
+                    if (angleToBoid < viewCosine) continue;
+                    // Increment neighbour count
+                    neighbours++;
+                    // Seperation
+                    float distanceMul = 1 / distanceToOther;
+                    seperation += -dirToOtherNormal * distanceMul;
+                    // Allignment
+                    vec3 velDiff = other.vel - instance.vel;
+                    alignment += velDiff;
+                    // Cohesion
+                    cohesion += dirToOther;
+                }
+            }
+        }
     }
     // Only update velocity if any neighbours was found
     if (neighbours != 0) {
