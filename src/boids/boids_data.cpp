@@ -12,25 +12,25 @@
 namespace ParticleSim::Boids {
 
 BoidsData::BoidsData(const std::shared_ptr<Render::Mesh::Mesh>& mesh, const std::shared_ptr<BoidsParams>& params)
-    : Render::Mesh::MeshRenderData(mesh) {
-    initialized_boids = params->boids;
-    spatial_grid_cell_size = glm::vec3(params->view_range, params->view_range, params->view_range);
+    : Render::Mesh::MeshRenderData(mesh), initialized_boids(params->boids), initialized_bounds(params->bounds), initialized_view_range(params->view_range) {
+    spatial_grid_cell_size = glm::vec3(initialized_view_range, initialized_view_range, initialized_view_range);
     spatial_grid_size = glm::ivec3(
-        glm::ceil(params->bounds.x / spatial_grid_cell_size.x),
-        glm::ceil(params->bounds.y / spatial_grid_cell_size.y),
-        glm::ceil(params->bounds.z / spatial_grid_cell_size.z));
+        glm::ceil(initialized_bounds.x / spatial_grid_cell_size.x),
+        glm::ceil(initialized_bounds.y / spatial_grid_cell_size.y),
+        glm::ceil(initialized_bounds.z / spatial_grid_cell_size.z));
 
-    std::cout << "Spatial Grid Size:\t" << spatial_grid_size.x << "\t" << spatial_grid_size.y << "\t" << spatial_grid_size.z << std::endl;
+    std::cout << "Spatial Grid Size\t" << spatial_grid_size.x << "\t" << spatial_grid_size.y << "\t" << spatial_grid_size.z << std::endl;
+    std::cout << "Spatial Grid Cell Size\t" << spatial_grid_cell_size.x << "\t" << spatial_grid_cell_size.y << "\t" << spatial_grid_cell_size.z << std::endl;
 
     // Prepare initial instances data
     std::vector<Instance> data;
-    data.resize(params->boids);
-    for (int i = 0; i < params->boids; i++) {
+    data.resize(initialized_boids);
+    for (uint i = 0; i < initialized_boids; i++) {
         // Position data
         glm::vec3 pos = glm::vec3(
-            glm::linearRand(1.0f, params->bounds.x - 1.0f),
-            glm::linearRand(1.0f, params->bounds.y - 1.0f),
-            glm::linearRand(1.0f, params->bounds.z - 1.0f)
+            glm::linearRand(1.0f, initialized_bounds.x - 1.0f),
+            glm::linearRand(1.0f, initialized_bounds.y - 1.0f),
+            glm::linearRand(1.0f, initialized_bounds.z - 1.0f)
         );
         data[i].pos_x       = pos.x;
         data[i].pos_y       = pos.y;
@@ -76,12 +76,12 @@ BoidsData::BoidsData(const std::shared_ptr<Render::Mesh::Mesh>& mesh, const std:
     glBufferData(GL_SHADER_STORAGE_BUFFER, grid_cells_buffer_size, NULL, GL_DYNAMIC_COPY);
 
     // Create spatial grid elements buffer
-    grid_elements_buffer_size = params->boids * sizeof(uint32_t);
+    grid_elements_buffer_size = initialized_boids * sizeof(uint32_t);
     glGenBuffers(1, &spatial_grid_elements_BO);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, spatial_grid_elements_BO);
     glBufferData(GL_SHADER_STORAGE_BUFFER, grid_elements_buffer_size, NULL, GL_DYNAMIC_COPY);
 
-    // Create spatial grid histogram buffer
+    // Create spatial grid histograms buffer
     glGenBuffers(1, &spatial_grid_hist_BO);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, spatial_grid_hist_BO);
     glBufferData(GL_SHADER_STORAGE_BUFFER, grid_hist_buffer_size, NULL, GL_DYNAMIC_COPY);
@@ -89,7 +89,7 @@ BoidsData::BoidsData(const std::shared_ptr<Render::Mesh::Mesh>& mesh, const std:
     // Create the element entries buffers
     glGenBuffers(1, &spatial_grid_entries_A);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, spatial_grid_entries_A);
-    grid_entries_buffer_size = params->boids * sizeof(SortEntry);
+    grid_entries_buffer_size = initialized_boids * sizeof(SortEntry);
     glBufferData(GL_SHADER_STORAGE_BUFFER, grid_entries_buffer_size, NULL, GL_DYNAMIC_COPY);
     glGenBuffers(1, &spatial_grid_entries_B);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, spatial_grid_entries_B);

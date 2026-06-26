@@ -40,11 +40,15 @@ public: // Buffer sizes.
     unsigned int grid_cells_buffer_size = 0;
     unsigned int grid_elements_buffer_size = 0;
     unsigned int grid_entries_buffer_size = 0;
+
+public: // Params used for initialized
     // The calculated size of the spatial grid where boids are laid out.
     // It is calculated using the params->bounds divided int cells of params->view_range size.
     glm::ivec3 spatial_grid_size;
     glm::vec3 spatial_grid_cell_size;
-    uint32_t initialized_boids = 0;
+    const uint32_t initialized_boids = 0;
+    const glm::vec3 initialized_bounds;
+    const float initialized_view_range;
 
 public: // Structs representing the sizes of the structs in the shaders
     struct Instance {

@@ -125,7 +125,7 @@ inline void BoidsCompute::run_grid_hist_shader(const BoidsData& data) {
 
 inline void BoidsCompute::run_grid_sort_shader(BoidsData& data) {
     spatial_sort_shader_prog->use();
-    spatial_sort_shader_prog->set_uniform_uint("boidCount", params->boids);
+    spatial_sort_shader_prog->set_uniform_uint("boidCount", data.initialized_boids);
 
     // Bind buffers
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, data.spatial_grid_hist_BO);
@@ -171,7 +171,7 @@ inline void BoidsCompute::run_sim_shader(float delta, BoidsData& data) {
     // Prepare simulation shader program
     sim_shader_prog->use();
     sim_shader_prog->set_uniform_uint("boidCount", data.initialized_boids);
-    sim_shader_prog->set_uniform_vec3("bounds", params->bounds);
+    sim_shader_prog->set_uniform_vec3("bounds", data.initialized_bounds);
     sim_shader_prog->set_uniform_float("boidMaxSpeed", params->boid_max_speed);
     sim_shader_prog->set_uniform_float("boidMinSpeed", params->boid_min_speed);
     sim_shader_prog->set_uniform_float("viewRange", params->view_range);
