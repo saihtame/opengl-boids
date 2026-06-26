@@ -15,7 +15,7 @@ struct GridCell {
 };
 
 struct Entry {
-    uint key[2];
+    uint key;
     uint value;
 };
 
@@ -43,14 +43,9 @@ layout(std430, binding = 2) buffer EntriesDst{
 /*---- Helpers ----*/
 Histogram insertedValues;
 
-uint getBucket(uint val[2]) {
-    if (pass < 8) {
-        uint shift = bits * pass;
-        return (val[0] >> shift) & bitMask;
-    } else {
-        uint shift = (bits * (pass - 8u));
-        return (val[1] >> shift) & bitMask;
-    }
+uint getBucket(uint val) {
+    uint shift = bits * pass;
+    return (val >> shift) & bitMask;
 }
 
 uint getIndex(uint bucket) {

@@ -202,10 +202,10 @@ inline void BoidsCompute::run_sim_shader(float delta, BoidsData& data) {
 }
 
 /*---- Validation Functions used for debugging ----*/
-std::array<uint32_t, 2> mortonEncode(uint32_t x, uint32_t y, uint32_t z) {
-    std::array<uint32_t, 2> key = {0u, 0u};
+uint32_t mortonEncode(uint32_t x, uint32_t y, uint32_t z) {
+    uint32_t key = 0u;
 
-    for (uint32_t i = 0; i < 21u; ++i) {
+    for (uint32_t i = 0; i < 10u; ++i) {
         uint32_t xBit = (x >> i) & 1u;
         uint32_t yBit = (y >> i) & 1u;
         uint32_t zBit = (z >> i) & 1u;
@@ -214,9 +214,9 @@ std::array<uint32_t, 2> mortonEncode(uint32_t x, uint32_t y, uint32_t z) {
         uint32_t yPos = xPos + 1u;
         uint32_t zPos = xPos + 2u;
 
-        if (xPos < 32u) key[0] |= xBit << xPos; else key[1] |= xBit << (xPos - 32u);
-        if (yPos < 32u) key[0] |= yBit << yPos; else key[1] |= yBit << (yPos - 32u);
-        if (zPos < 32u) key[0] |= zBit << zPos; else key[1] |= zBit << (zPos - 32u);
+        key |= xBit << xPos;
+        key |= yBit << yPos;
+        key |= zBit << zPos;
     }
     return key;
 }
@@ -243,11 +243,8 @@ inline void validate_grid_key_shader(const BoidsData& data) {
         // Check that morton encoding is done correctly
         auto instance = instance_buffer[i];
         auto goodKey = mortonEncode(instance.grid_pos_x, instance.grid_pos_y, instance.grid_pos_z);
-        if (entry.key[0] != goodKey[0]) {
-            std::cerr << "Unexpected SortEntry lower key: " << entry.key[0] << "\tExpected value: " << goodKey[0] << std::endl;
-        }
-        if (entry.key[1] != goodKey[1]) {
-            std::cerr << "Unexpected SortEntry upper key: " << entry.key[1] << "\tExpected value: " << goodKey[1] << std::endl;
+        if (entry.key != goodKey) {
+            std::cerr << "Unexpected SortEntry key: " << entry.key << "\tExpected value: " << goodKey << std::endl;
         }
     }
 
@@ -264,24 +261,14 @@ std::array<BoidsData::Histogram, BoidsData::grid_radix_passes> get_histograms(Bo
     }
 
     for (uint i = 0; i < entriesCount; i++) {
-        uint32_t v[2] = {entries[i].key[0], entries[i].key[1]};
-
         // Add to local histogram value for each pass
         // First 32 bits
         for (uint px = 0u; px < (BoidsData::grid_radix_passes / 2u); px++) {
             uint shift = px * BoidsData::grid_radix_bits;
             // Determine bucket of value
-            uint b = (v[0] >> shift) & bitMask;
+            uint b = (entries[i].key >> shift) & bitMask;
             // Add 1 to bucket count
             hists[px].buckets[b] += 1;
-        }
-        // Last 32 bits
-        for (uint py = 0u; py < BoidsData::grid_radix_passes / 2u; py++) {
-            // Determine bucket of value
-            uint shift = py * BoidsData::grid_radix_bits;
-            uint b = (v[1] >> shift) & bitMask;
-            // Add 1 to bucket count
-            hists[py + BoidsData::grid_radix_passes / 2u].buckets[b] += 1;
         }
     }
 
@@ -335,7 +322,7 @@ inline void validate_grid_radix_shader(const BoidsData& data) {
 
     // Validate entries
     std::unordered_set<uint32_t> seen_values;
-    uint64_t lastKey = 0u;
+    uint32_t lastKey = 0u;
     for (uint i = 0; i < data.initialized_boids; i++) {
         BoidsData::SortEntry e = entries_buffer[i];
         // Check for double entry
@@ -349,11 +336,10 @@ inline void validate_grid_radix_shader(const BoidsData& data) {
             std::cerr << "\033[31mSort Too High Value:\t" << e.value << "\033[0m" << std::endl;
         }
         // Check order
-        uint64_t key = ((uint64_t)e.key[1] << 32 | e.key[0]);
-        if (key < lastKey) {
-            std::cerr << "\033[31mSort Unordered Keys:\t" << lastKey << "\t" << key << "\033[0m" << std::endl;
+        if (e.key < lastKey) {
+            std::cerr << "\033[31mSort Unordered Keys:\t" << lastKey << "\t" << e.key << "\033[0m" << std::endl;
         }
-        lastKey = key;
+        lastKey = e.key;
     }
     // Ensure all values are there
     for (uint32_t i = 0; i < data.initialized_boids; i++) {

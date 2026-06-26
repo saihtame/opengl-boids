@@ -9,7 +9,7 @@ struct Instance {
 };
 
 struct Entry {
-    uint key[2];
+    uint key;
     uint value;
 };
 
@@ -26,13 +26,11 @@ layout(std430, binding = 1) buffer Entries {
 };
 
 /*---- Helpers ----*/
-uint[2] mortonEncode(uvec3 v) {
-    uint key[2];
-    key[0] = 0;
-    key[1] = 0;
+uint mortonEncode(uvec3 v) {
+    uint key = 0u;
 
-    // We can only store 21 bits of the x, y and z coords.
-    // Therefore, only the lowest 21 bits are encoded.
+    // We can only store 10 bits of the x, y and z coords.
+    // Therefore, only the lowest 10 bits are encoded.
     for (uint i = 0u; i < 21u; ++i)
     {
         // Retrieve the i'th bit of x, y and z coords
@@ -43,16 +41,10 @@ uint[2] mortonEncode(uvec3 v) {
         uint xPos = 3u * i;
         uint yPos = xPos + 1u;
         uint zPos = xPos + 2u;
-        // Store the bit in either the x or y component of they key
-        // key.x for the first 32 bits and key.y for the next 32 bits
-        if (xPos < 32u) key[0] |= xBit << xPos;
-        else            key[1] |= xBit << (xPos - 32u);
-
-        if (yPos < 32u) key[0] |= yBit << yPos;
-        else            key[1] |= yBit << (yPos - 32u);
-
-        if (zPos < 32u) key[0] |= zBit << zPos;
-        else            key[1] |= zBit << (zPos - 32u);
+        // Store the bit in the key
+        key |= xBit << xPos;
+        key |= yBit << yPos;
+        key |= zBit << zPos;
     }
 
     return key;

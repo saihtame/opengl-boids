@@ -68,10 +68,10 @@ public: // Structs representing the sizes of the structs in the shaders
     static_assert(sizeof(Instance) == 48);
 
     struct SortEntry {
-        uint32_t key[2];
+        uint32_t key;
         uint32_t value;
     };
-    static_assert(sizeof(SortEntry) == 12);
+    static_assert(sizeof(SortEntry) == 8);
 
     struct Histogram {
         uint32_t buckets[16];
@@ -91,9 +91,12 @@ public:
     // The amount of bits each pass of the radix shader processes
     static constexpr uint32_t grid_radix_bits = 4;
     // The amount of passes the radix shader needs to do
-    static constexpr uint32_t grid_radix_passes = 64 / grid_radix_bits; // 16
+    static constexpr uint32_t grid_radix_passes = 32 / grid_radix_bits; // 8 
     // The total size of the histogram buffer in bytes
-    static constexpr uint32_t grid_hist_buffer_size = grid_radix_passes * sizeof(Histogram); // 1024
+    static constexpr uint32_t grid_hist_buffer_size = grid_radix_passes * sizeof(Histogram); // 512
+    // Limit of each dimension in the spatial grid size.
+    // The moton encoding does not have room for more than 10 bits for each dimension in a 32bit value.
+    static constexpr uint32_t grid_size_limit = 1024;
 };
 
 }
