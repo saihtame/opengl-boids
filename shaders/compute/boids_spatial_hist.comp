@@ -8,7 +8,7 @@ const uint bitMask = 0xf; // mask of the first 4 bits
 // The amount of passes the redix sort has do to
 const uint passes = 32u / bits;
 // The amount of bits each pass has to sort
-const uint bucketsPerPass = 16; // 2 to the power of bits
+const uint bucketsPerPass = 1 << bits; // 2 to the power of bits
 
 /*---- Structs ----*/
 struct GridCell {

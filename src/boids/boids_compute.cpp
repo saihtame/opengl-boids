@@ -1,8 +1,8 @@
 #include "boids_compute.hpp"
 #include "boids/boids_data.hpp"
+#include "boids/boids_shader_timer.hpp"
 #include "shaders/shader.hpp"
 #include "shaders/shader_program.hpp"
-#include <SDL3/SDL_timer.h>
 #include <array>
 #include <cstdint>
 #include <glad/gl.h>
@@ -12,7 +12,6 @@
 #include <memory>
 #include <sys/types.h>
 #include <unordered_set>
-#include <iomanip>
 
 
 //#define VALIDATE_SHADER_RESULTS
@@ -61,74 +60,45 @@ BoidsCompute::BoidsCompute(const std::shared_ptr<BoidsParams>& parameters)
 }
 
 void BoidsCompute::compute(float delta, BoidsData& data) {
-    #ifdef TIME_SHADER_STAGES
-    uint64_t timer_freq = SDL_GetPerformanceFrequency();
-    uint64_t start_time = SDL_GetPerformanceCounter();
-    uint64_t total_time = 0u;
-    std::cout << std::fixed << std::setprecision(8);
-    #endif
     /*---- Run Compute Shaders ----*/
+    #ifdef TIME_SHADER_STAGES
+    auto timer = BoidsShaderTimer();
+    timer.start_timer();
+    #endif
     // Grid key shader
     run_grid_key_shader(data);
-    #ifdef TIME_SHADER_STAGES
-    uint64_t stop_time = SDL_GetPerformanceCounter();
-    uint64_t delta_time = stop_time - start_time;
-    total_time += delta_time;
-    std::cout << "       Grid Key Shader Time\t" << double(delta_time) / double(timer_freq) << "s\n";
-    start_time = SDL_GetPerformanceCounter();
-    #endif
     #ifdef VALIDATE_SHADER_RESULTS
     validate_grid_key_shader(data);
     #endif
     // Grid key histogram shader
     run_grid_hist_shader(data);
-    #ifdef TIME_SHADER_STAGES
-    stop_time = SDL_GetPerformanceCounter();
-    delta_time = stop_time - start_time;
-    total_time += delta_time;
-    std::cout << "Grid Histograms Shader Time\t" << double(delta_time) / double(timer_freq) << "s\n";
-    start_time = SDL_GetPerformanceCounter();
-    #endif
     #ifdef VALIDATE_SHADER_RESULTS
     validate_grid_hist_shader(data);
     #endif
     // Grid key sorting shader
     run_grid_sort_shader(data);
-    #ifdef TIME_SHADER_STAGES
-    stop_time = SDL_GetPerformanceCounter();
-    delta_time = stop_time - start_time;
-    total_time += delta_time;
-    std::cout << "      Grid Sort Shader Time\t" << double(delta_time) / double(timer_freq) << "s\n";
-    start_time = SDL_GetPerformanceCounter();
-    #endif
     #ifdef VALIDATE_SHADER_RESULTS
     validate_grid_radix_shader(data);
     #endif
     // Grid post shader
     run_grid_post_shader(data);
-    #ifdef TIME_SHADER_STAGES
-    stop_time = SDL_GetPerformanceCounter();
-    delta_time = stop_time - start_time;
-    total_time += delta_time;
-    std::cout << " Grid Post Sort Shader Time\t" << double(delta_time) / double(timer_freq) << "s\n";
-    start_time = SDL_GetPerformanceCounter();
-    #endif
     #ifdef VALIDATE_SHADER_RESULTS
     validate_grid_post_shader(data);
     #endif
     // Sim shader
     run_sim_shader(delta, data);
     #ifdef TIME_SHADER_STAGES
-    stop_time = SDL_GetPerformanceCounter();
-    delta_time = stop_time - start_time;
-    total_time += delta_time;
-    std::cout << "            Sim Shader Time\t" << double(delta_time) / double(timer_freq) << "s\n";
-    start_time = SDL_GetPerformanceCounter();
-    std::cout << "                 Total Time\t" << float(total_time) / float(timer_freq) << "s" << std::endl;
+    double time = timer.stop_timer();
+    std::cout << "          Total Shader Time\t" << time << std::endl;
     #endif
 }
 
 inline void BoidsCompute::run_grid_key_shader(const BoidsData& data) {
+    #ifdef TIME_SHADER_STAGES
+    auto timer = BoidsShaderTimer();
+    timer.start_timer();
+    #endif
+
     // Prepare cell key shader program
     spatial_key_shader_prog->use();
     spatial_key_shader_prog->set_uniform_uint("boidCount", data.initialized_boids);
@@ -141,9 +111,19 @@ inline void BoidsCompute::run_grid_key_shader(const BoidsData& data) {
     int dispatches = (data.initialized_boids + work_group_size - 1) / work_group_size;
     glDispatchCompute(dispatches, 1, 1);
     glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
+
+    #ifdef TIME_SHADER_STAGES
+    double time = timer.stop_timer();
+    std::cout << "       Grid Key Shader Time\t" << time << "\n";
+    #endif
 }
 
 inline void BoidsCompute::run_grid_hist_shader(const BoidsData& data) {
+    #ifdef TIME_SHADER_STAGES
+    auto timer = BoidsShaderTimer();
+    timer.start_timer();
+    #endif
+
     // Clear histogram buffer before running
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, data.spatial_grid_hist_BO);
     GLuint zero = 0;
@@ -166,9 +146,19 @@ inline void BoidsCompute::run_grid_hist_shader(const BoidsData& data) {
     int dispatches = (data.initialized_boids + work_group_size - 1) / work_group_size;
     glDispatchCompute(dispatches, 1, 1);
     glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
+
+    #ifdef TIME_SHADER_STAGES
+    double time = timer.stop_timer();
+    std::cout << "Grid Histograms Shader Time\t" << time << "\n";
+    #endif
 }
 
 inline void BoidsCompute::run_grid_sort_shader(BoidsData& data) {
+    #ifdef TIME_SHADER_STAGES
+    auto timer = BoidsShaderTimer();
+    timer.start_timer();
+    #endif
+
     spatial_sort_shader_prog->use();
     spatial_sort_shader_prog->set_uniform_uint("boidCount", data.initialized_boids);
 
@@ -184,9 +174,19 @@ inline void BoidsCompute::run_grid_sort_shader(BoidsData& data) {
         glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
         data.switch_entries_buffers();
     }
+
+    #ifdef TIME_SHADER_STAGES
+    double time = timer.stop_timer();
+    std::cout << "      Grid Sort Shader Time\t" << time << "\n";
+    #endif
 }
 
 inline void BoidsCompute::run_grid_post_shader(BoidsData& data) {
+    #ifdef TIME_SHADER_STAGES
+    auto timer = BoidsShaderTimer();
+    timer.start_timer();
+    #endif
+
     // Clear grid cells buffer before running
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, data.spatial_grid_cells_BO);
     GLuint zero = 0;
@@ -210,9 +210,19 @@ inline void BoidsCompute::run_grid_post_shader(BoidsData& data) {
     int dispatches = (data.initialized_boids + work_group_size - 1) / work_group_size;
     glDispatchCompute(dispatches, 1, 1);
     glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
+
+    #ifdef TIME_SHADER_STAGES
+    double time = timer.stop_timer();
+    std::cout << " Grid Post Sort Shader Time\t" << time << "\n";
+    #endif
 }
 
 inline void BoidsCompute::run_sim_shader(float delta, BoidsData& data) {
+    #ifdef TIME_SHADER_STAGES
+    auto timer = BoidsShaderTimer();
+    timer.start_timer();
+    #endif
+
     // Prepare simulation shader program
     sim_shader_prog->use();
     sim_shader_prog->set_uniform_uint("boidCount", data.initialized_boids);
@@ -244,6 +254,11 @@ inline void BoidsCompute::run_sim_shader(float delta, BoidsData& data) {
 
     // Switch instance data buffers
     data.switch_instance_buffers();
+
+    #ifdef TIME_SHADER_STAGES
+    double time = timer.stop_timer();
+    std::cout << "            Sim Shader Time\t" << time << "\n";
+    #endif
 }
 
 /*---- Validation Functions used for debugging ----*/
