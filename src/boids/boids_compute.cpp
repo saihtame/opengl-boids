@@ -2,6 +2,7 @@
 #include "boids/boids_data.hpp"
 #include "shaders/shader.hpp"
 #include "shaders/shader_program.hpp"
+#include <SDL3/SDL_timer.h>
 #include <array>
 #include <cstdint>
 #include <glad/gl.h>
@@ -11,9 +12,11 @@
 #include <memory>
 #include <sys/types.h>
 #include <unordered_set>
+#include <iomanip>
 
 
 //#define VALIDATE_SHADER_RESULTS
+#define TIME_SHADER_STAGES
 
 namespace ParticleSim::Boids {
 
@@ -58,29 +61,71 @@ BoidsCompute::BoidsCompute(const std::shared_ptr<BoidsParams>& parameters)
 }
 
 void BoidsCompute::compute(float delta, BoidsData& data) {
+    #ifdef TIME_SHADER_STAGES
+    uint64_t timer_freq = SDL_GetPerformanceFrequency();
+    uint64_t start_time = SDL_GetPerformanceCounter();
+    uint64_t total_time = 0u;
+    std::cout << std::fixed << std::setprecision(8);
+    #endif
     /*---- Run Compute Shaders ----*/
     // Grid key shader
     run_grid_key_shader(data);
+    #ifdef TIME_SHADER_STAGES
+    uint64_t stop_time = SDL_GetPerformanceCounter();
+    uint64_t delta_time = stop_time - start_time;
+    total_time += delta_time;
+    std::cout << "       Grid Key Shader Time\t" << double(delta_time) / double(timer_freq) << "s\n";
+    start_time = SDL_GetPerformanceCounter();
+    #endif
     #ifdef VALIDATE_SHADER_RESULTS
     validate_grid_key_shader(data);
     #endif
     // Grid key histogram shader
     run_grid_hist_shader(data);
+    #ifdef TIME_SHADER_STAGES
+    stop_time = SDL_GetPerformanceCounter();
+    delta_time = stop_time - start_time;
+    total_time += delta_time;
+    std::cout << "Grid Histograms Shader Time\t" << double(delta_time) / double(timer_freq) << "s\n";
+    start_time = SDL_GetPerformanceCounter();
+    #endif
     #ifdef VALIDATE_SHADER_RESULTS
     validate_grid_hist_shader(data);
     #endif
     // Grid key sorting shader
     run_grid_sort_shader(data);
+    #ifdef TIME_SHADER_STAGES
+    stop_time = SDL_GetPerformanceCounter();
+    delta_time = stop_time - start_time;
+    total_time += delta_time;
+    std::cout << "      Grid Sort Shader Time\t" << double(delta_time) / double(timer_freq) << "s\n";
+    start_time = SDL_GetPerformanceCounter();
+    #endif
     #ifdef VALIDATE_SHADER_RESULTS
     validate_grid_radix_shader(data);
     #endif
     // Grid post shader
     run_grid_post_shader(data);
+    #ifdef TIME_SHADER_STAGES
+    stop_time = SDL_GetPerformanceCounter();
+    delta_time = stop_time - start_time;
+    total_time += delta_time;
+    std::cout << " Grid Post Sort Shader Time\t" << double(delta_time) / double(timer_freq) << "s\n";
+    start_time = SDL_GetPerformanceCounter();
+    #endif
     #ifdef VALIDATE_SHADER_RESULTS
     validate_grid_post_shader(data);
     #endif
     // Sim shader
     run_sim_shader(delta, data);
+    #ifdef TIME_SHADER_STAGES
+    stop_time = SDL_GetPerformanceCounter();
+    delta_time = stop_time - start_time;
+    total_time += delta_time;
+    std::cout << "            Sim Shader Time\t" << double(delta_time) / double(timer_freq) << "s\n";
+    start_time = SDL_GetPerformanceCounter();
+    std::cout << "                 Total Time\t" << float(total_time) / float(timer_freq) << "s" << std::endl;
+    #endif
 }
 
 inline void BoidsCompute::run_grid_key_shader(const BoidsData& data) {
