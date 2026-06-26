@@ -19,6 +19,25 @@ BoidsData::BoidsData(const std::shared_ptr<Render::Mesh::Mesh>& mesh, const std:
         glm::ceil(initialized_bounds.y / spatial_grid_cell_size.y),
         glm::ceil(initialized_bounds.z / spatial_grid_cell_size.z));
 
+    // Ensure the grid size does not exceed the limit.
+    // If it does, we scale up the cell size.
+    if (spatial_grid_size.x > int(grid_size_limit)) {
+        spatial_grid_cell_size.x = 1024;
+        float scalar = float(spatial_grid_size.x) / float(grid_size_limit);
+        spatial_grid_cell_size.x *= scalar;
+    }
+    if (spatial_grid_cell_size.y > int(grid_size_limit)) {
+        spatial_grid_cell_size.y = 1024;
+        float scalar = float(spatial_grid_size.y) / float(grid_size_limit);
+        spatial_grid_cell_size.y *= scalar;
+    }
+    if (spatial_grid_cell_size.z > int(grid_size_limit)) {
+        spatial_grid_cell_size.z = 1024;
+        float scalar = float(spatial_grid_size.z) / float(grid_size_limit);
+        spatial_grid_cell_size.z *= scalar;
+    }
+
+    // Report our grid and grid cell sizes
     std::cout << "Spatial Grid Size\t" << spatial_grid_size.x << "\t" << spatial_grid_size.y << "\t" << spatial_grid_size.z << std::endl;
     std::cout << "Spatial Grid Cell Size\t" << spatial_grid_cell_size.x << "\t" << spatial_grid_cell_size.y << "\t" << spatial_grid_cell_size.z << std::endl;
 

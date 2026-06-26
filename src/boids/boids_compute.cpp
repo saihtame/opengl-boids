@@ -174,7 +174,7 @@ inline void BoidsCompute::run_sim_shader(float delta, BoidsData& data) {
     sim_shader_prog->set_uniform_vec3("bounds", data.initialized_bounds);
     sim_shader_prog->set_uniform_float("boidMaxSpeed", params->boid_max_speed);
     sim_shader_prog->set_uniform_float("boidMinSpeed", params->boid_min_speed);
-    sim_shader_prog->set_uniform_float("viewRange", params->view_range);
+    sim_shader_prog->set_uniform_float("viewRange", data.initialized_view_range);
     sim_shader_prog->set_uniform_float("viewCosine", params->view_cosine);
     sim_shader_prog->set_uniform_float("collisionAvoidanceStrength", params->collision_avoidance_strength);
     sim_shader_prog->set_uniform_float("acceleration", params->acceleration);
