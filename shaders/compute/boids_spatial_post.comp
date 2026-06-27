@@ -18,15 +18,15 @@ layout (location = 1) uniform ivec3 gridSize;
 
 /*---- Buffers ----*/
 // Contains sorted key-value pairs for each boid instance
-layout(std430, binding = 0) buffer Entries {
+layout(std430, binding = 0) readonly buffer Entries {
     Entry entries[];
 };
 
-layout(std430, binding = 1) buffer GridCells {
+layout(std430, binding = 1) writeonly buffer GridCells {
     GridCell gridCells[];
 };
 
-layout(std430, binding = 2) buffer GridElements {
+layout(std430, binding = 2) writeonly buffer GridElements {
     uint gridElements[];
 };
 

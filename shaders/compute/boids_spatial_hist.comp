@@ -11,11 +11,6 @@ const uint passes = 32u / bits;
 const uint bucketsPerPass = 1 << bits; // 2 to the power of bits
 
 /*---- Structs ----*/
-struct GridCell {
-    uint offsetStart;
-    uint offsetEnd;
-};
-
 struct Entry {
     uint key;
     uint value;
@@ -29,11 +24,11 @@ struct Histogram {
 layout (location = 0) uniform uint boidCount;
 
 /*---- Buffers ----*/
-layout(std430, binding = 0) buffer EntriesSrc {
+layout(std430, binding = 0) readonly buffer EntriesSrc {
     Entry entriesSrc[];
 };
 
-layout(std430, binding = 1) buffer Histograms {
+layout(std430, binding = 1) writeonly buffer Histograms {
     Histogram histograms[];
 };
 

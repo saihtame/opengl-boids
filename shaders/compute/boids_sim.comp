@@ -13,11 +13,6 @@ struct GridCell {
     uint offsetEnd;
 };
 
-struct Entry {
-    uint key[2];
-    uint value;
-};
-
 /*---- Uniforms ----*/
 layout (location = 0) uniform uint boidCount;
 layout (location = 1) uniform vec3 bounds;
@@ -35,19 +30,19 @@ layout (location = 12) uniform vec3 cellSize;
 layout (location = 13) uniform uvec3 gridSize;
 
 /*---- Buffers ----*/
-layout(std430, binding = 0) buffer InstanceDataIn {
+layout(std430, binding = 0) readonly buffer InstanceDataIn {
     Instance instancesIn[];
 };
 
-layout(std430, binding = 1) buffer InstanceDataOut {
+layout(std430, binding = 1) writeonly buffer InstanceDataOut {
     Instance instancesOut[];
 };
 
-layout(std430, binding = 2) buffer GridCells {
+layout(std430, binding = 2) readonly buffer GridCells {
     GridCell gridCells[];
 };
 
-layout(std430, binding = 3) buffer GridElements {
+layout(std430, binding = 3) readonly buffer GridElements {
     uint gridElements[];
 };
 
